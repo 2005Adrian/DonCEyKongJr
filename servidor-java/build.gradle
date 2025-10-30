@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'cr.tec.donceykongjr'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Librería JSON (útil más adelante)
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Dependencias para pruebas (opcional)
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+}
+
+application {
+    // Clase principal del servidor
+    mainClass = 'cr.tec.donceykongjr.server.Main'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
