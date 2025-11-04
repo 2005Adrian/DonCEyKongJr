@@ -11,9 +11,8 @@ repositories {
 }
 
 dependencies {
-    // Librería JSON (útil más adelante)
-    implementation 'com.google.code.gson:gson:2.10.1'
-
+    implementation 'com.google.code.gson:gson:2.11.0'
+    
     // Dependencias para pruebas (opcional)
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
@@ -23,9 +22,18 @@ application {
     mainClass = 'cr.tec.donceykongjr.server.Main'
 }
 
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+// Suprimir warnings de Java 8 obsoleto
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-Xlint:-options']
+}
+
+// Configurar toolchain para usar Java 8 para compilar, pero Java 21 para ejecutar Gradle
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
