@@ -11,11 +11,24 @@ repositories {
 }
 
 dependencies {
-    // Librería JSON (útil más adelante)
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.code.gson:gson:2.11.0'
 
     // Dependencias para pruebas (opcional)
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+}
+
+// Configurar toolchain para usar Java 21
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+// Suprimir warnings de Java 8 obsoleto
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-Xlint:-options']
 }
 
 application {
@@ -23,12 +36,10 @@ application {
     mainClass = 'cr.tec.donceykongjr.server.Main'
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
-
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
+}
+
+tasks.run {
+    standardInput = System.in
 }

@@ -1,5 +1,34 @@
 🧠 GUÍA PARA EJECUTAR EL SERVIDOR Y CONECTARSE DESDE C
 Proyecto: DonCEy Kong Jr – Comunicación cliente-servidor
+
+---
+
+## 📋 Documentación del Proyecto
+
+**IMPORTANTE**: El proyecto ha sido recientemente limpiado y reorganizado.
+
+### 📚 Documentación
+- 📘 [**VERSIONES.md**](VERSIONES.md) - Versiones exactas de software necesarias (Java, Gradle, GCC, etc.)
+- 📗 [**LIMPIEZA_REALIZADA.md**](LIMPIEZA_REALIZADA.md) - Reporte detallado de limpieza y organización
+- 🚀 [**INSTRUCCIONES_SIMPLES.md**](INSTRUCCIONES_SIMPLES.md) - Guía rápida para ejecutar (localhost)
+
+### 🎮 Scripts de Ejecución (NUEVO)
+- 🎯 [**INICIAR.bat**](INICIAR.bat) - Launcher principal con menú (¡Úsalo!)
+- ⚙️ [**check-versions.bat**](check-versions.bat) - Verificar versiones instaladas
+- 🖥️ [**servidor-java/iniciar-servidor.bat**](servidor-java/iniciar-servidor.bat) - Ejecutar servidor directamente
+- 💻 [**cliente-c/src/iniciar-cliente.bat**](cliente-c/src/iniciar-cliente.bat) - Ejecutar cliente
+
+**Estado del proyecto**: ✅ BUILD SUCCESSFUL - Listo para desarrollo
+
+### ⚡ Inicio Rápido
+1. Haz doble clic en `INICIAR.bat`
+2. Selecciona `[1]` para servidor (déjalo corriendo)
+3. Abre otra ventana de `INICIAR.bat`
+4. Selecciona `[2]` para cliente
+5. ¡Listo! Servidor y cliente corriendo en localhost
+
+---
+
 📁 Estructura general del proyecto
 Proyecto3/
 │
