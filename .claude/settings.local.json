@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"C:\\Users\\Pablo\\Desktop\\DONKEY\\DonCEyKongJr\\check-versions.bat\")",
+      "Bash(java:*)",
+      "Bash(gradlew:*)",
+      "Bash(gcc:*)",
+      "Bash(.gradlew:*)",
+      "Bash(gradle --version:*)",
+      "Bash(gradle clean build:*)",
+      "Bash(gradle build:*)",
+      "Bash(tree:*)",
+      "Bash(nul)",
+      "Bash(awk:*)",
+      "Bash(git config:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
