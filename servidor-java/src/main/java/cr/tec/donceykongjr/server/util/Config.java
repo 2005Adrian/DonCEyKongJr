@@ -6,7 +6,7 @@ package cr.tec.donceykongjr.server.util;
  */
 public class Config {
     /** Puerto por defecto del servidor TCP */
-    public static final int PUERTO_DEFAULT = 5000;
+    public static final int PUERTO_DEFAULT = 5555;
     
     /** Máximo número de jugadores simultáneos */
     public static final int MAX_JUGADORES = 2;
