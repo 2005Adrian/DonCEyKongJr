@@ -14,7 +14,12 @@
       "Bash(awk:*)",
       "Bash(git config:*)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(compile_output.txt)",
+      "Bash(cmd /c \"cd cliente-c\\src && gcc client.c -o client.exe -lws2_32 2>&1\")",
+      "Bash(cmd /c \"cd cliente-c\\src && gcc client.c -o client.exe -lws2_32 && echo Compilacion exitosa && dir client.exe\")",
+      "Bash(cmd /c type \"C:\\Users\\Pablo\\Desktop\\DONKEY\\DonCEyKongJr\\cliente-c\\src\\compile_output.txt\")",
+      "Bash(cmd /c \"cd C:\\Users\\Pablo\\Desktop\\DONKEY\\DonCEyKongJr\\cliente-c\\src && dir client_gui_completo.exe\")"
     ],
     "deny": [],
     "ask": []

@@ -16,7 +16,7 @@ echo.
 echo Selecciona qué deseas ejecutar:
 echo.
 echo [1] Servidor (Java)
-echo [2] Cliente (C)
+echo [2] Cliente COMPLETO (Juego Gráfico)
 echo [3] Verificar Versiones
 echo [4] Compilar Todo
 echo [0] Salir
@@ -26,7 +26,7 @@ echo ========================================
 set /p opcion="Ingresa tu opción (0-4): "
 
 if "%opcion%"=="1" goto servidor
-if "%opcion%"=="2" goto cliente
+if "%opcion%"=="2" goto cliente_completo
 if "%opcion%"=="3" goto verificar
 if "%opcion%"=="4" goto compilar
 if "%opcion%"=="0" goto salir
@@ -51,17 +51,23 @@ if exist iniciar-servidor.bat (
 )
 goto fin
 
-:cliente
+:cliente_completo
 cls
 echo ========================================
-echo Iniciando CLIENTE...
+echo Iniciando CLIENTE COMPLETO...
 echo ========================================
 echo.
+echo Este es el juego completo con:
+echo - Escenario completo (4 lianas, plataformas, abismo)
+echo - Donkey Kong en jaula
+echo - Sprites mejorados y animaciones
+echo - HUD visual con corazones
+echo.
 cd cliente-c\src
-if exist iniciar-cliente.bat (
-    call iniciar-cliente.bat
+if exist iniciar-cliente-completo.bat (
+    call iniciar-cliente-completo.bat
 ) else (
-    echo ❌ ERROR: No se encuentra iniciar-cliente.bat
+    echo ❌ ERROR: No se encuentra iniciar-cliente-completo.bat
     pause
 )
 goto fin
@@ -114,17 +120,18 @@ echo.
 
 cd ..
 
-echo [2/2] Compilando CLIENTE (C)...
+echo [2/2] Compilando CLIENTE COMPLETO (C)...
 echo ----------------------------------------
 cd cliente-c\src
-gcc cliente_prueba.c -o cliente_prueba.exe -lws2_32
 
+echo   Compilando cliente gráfico completo (modular)...
+gcc main.c game.c network.c render.c input.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
 if errorlevel 1 (
-    echo ❌ ERROR al compilar el cliente
+    echo ❌ ERROR al compilar el cliente gráfico completo
     pause
     goto fin
 )
-echo ✓ Cliente compilado
+echo   ✓ Cliente gráfico completo compilado
 echo.
 
 cd ..\..
