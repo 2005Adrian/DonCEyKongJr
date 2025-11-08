@@ -11,7 +11,6 @@ import cr.tec.donceykongjr.server.util.LoggerUtil;
  */
 public class JsonUtil {
     private static final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()
             .create();
     
     /**

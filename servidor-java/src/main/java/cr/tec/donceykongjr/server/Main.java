@@ -1,6 +1,6 @@
 package cr.tec.donceykongjr.server;
 
-import cr.tec.donceykongjr.server.cli.ConsolaAdmin;
+import cr.tec.donceykongjr.server.gui.AdminGUI;
 import cr.tec.donceykongjr.server.logic.GameLoop;
 import cr.tec.donceykongjr.server.logic.GameManager;
 import cr.tec.donceykongjr.server.network.ServidorJuego;
@@ -9,14 +9,13 @@ import cr.tec.donceykongjr.server.util.LoggerUtil;
 
 /**
  * Clase principal del servidor DonCEy Kong Jr.
- * Inicializa el GameManager, GameLoop, ServidorJuego y ConsolaAdmin.
+ * Inicializa el GameManager, GameLoop, ServidorJuego y AdminGUI.
  */
 public class Main {
     private static GameManager gameManager;
     private static GameLoop gameLoop;
     private static ServidorJuego servidor;
-    private static ConsolaAdmin consola;
-    private static Thread hiloConsola;
+    private static AdminGUI adminGUI;
     private static Thread hiloServidor;
     
     public static void main(String[] args) {
@@ -37,18 +36,16 @@ public class Main {
         servidor = new ServidorJuego(puerto, gameManager);
         hiloServidor = new Thread(() -> servidor.iniciar());
         hiloServidor.start();
-        
-        // Inicializar Consola de Administración
-        consola = new ConsolaAdmin(gameManager);
-        hiloConsola = new Thread(consola);
-        hiloConsola.start();
-        
+
+        // Inicializar GUI de Administración
+        adminGUI = new AdminGUI(gameManager);
+        adminGUI.mostrar();
+
         // Registrar hook para cerrar limpiamente
         Runtime.getRuntime().addShutdownHook(new Thread(Main::cerrarServidor));
-        
+
         LoggerUtil.info("servidor completamente iniciado. listo para recibir conexiones.");
-        LoggerUtil.info("escribe comandos en la consola de administracion (help para ayuda)");
-        
+
         // Esperar a que termine el hilo del servidor
         try {
             hiloServidor.join();
@@ -63,19 +60,15 @@ public class Main {
      */
     private static void cerrarServidor() {
         LoggerUtil.info("cerrando servidor...");
-        
-        if (consola != null) {
-            consola.detener();
-        }
-        
+
         if (servidor != null) {
             servidor.detener();
         }
-        
+
         if (gameLoop != null) {
             gameLoop.detener();
         }
-        
+
         LoggerUtil.info("servidor cerrado correctamente");
     }
 }

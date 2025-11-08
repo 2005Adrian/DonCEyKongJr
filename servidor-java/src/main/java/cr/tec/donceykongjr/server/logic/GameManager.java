@@ -38,6 +38,7 @@ public class GameManager extends Subject {
         this.pausado = false;
         this.tickActual = 0;
         inicializarLianas();
+        inicializarEntidades();
     }
     
     /**
@@ -50,7 +51,45 @@ public class GameManager extends Subject {
             lianas.add(liana);
         }
     }
-    
+
+    /**
+     * Inicializa las entidades del juego (cocodrilos y frutas).
+     */
+    private void inicializarEntidades() {
+        Random random = new Random();
+
+        // Crear cocodrilos iniciales (3-5 cocodrilos en diferentes lianas)
+        int numCocodrilos = 3 + random.nextInt(3);
+        for (int i = 0; i < numCocodrilos; i++) {
+            int liana = random.nextInt(4); // Lianas 0-3
+            double y = 100.0 + random.nextDouble() * 300.0; // Y entre 100 y 400
+
+            // Alternar entre rojos y azules
+            Cocodrilo cocodrilo;
+            if (i % 2 == 0) {
+                cocodrilo = new CocodriloRojo("CROC_R_" + i, 0, 0, liana, y);
+            } else {
+                cocodrilo = new CocodriloAzul("CROC_B_" + i, 0, 0, liana, y);
+            }
+            cocodrilos.add(cocodrilo);
+            LoggerUtil.info("cocodrilo " + cocodrilo.getTipo() + " creado en liana " + liana + ", y=" + String.format("%.2f", y));
+        }
+
+        // Crear frutas iniciales (2-4 frutas en diferentes lianas)
+        int numFrutas = 2 + random.nextInt(3);
+        for (int i = 0; i < numFrutas; i++) {
+            int liana = random.nextInt(4); // Lianas 0-3
+            double y = 150.0 + random.nextDouble() * 250.0; // Y entre 150 y 400
+            int puntos = 10; // Puntos base
+
+            Fruta fruta = new Fruta("FRUTA_" + i, 0.0, y, liana, puntos);
+            frutas.add(fruta);
+            LoggerUtil.info("fruta creada en liana " + liana + ", y=" + String.format("%.2f", y) + ", puntos=" + puntos);
+        }
+
+        LoggerUtil.info("inicialización completada: " + numCocodrilos + " cocodrilos, " + numFrutas + " frutas");
+    }
+
     /**
      * Actualiza el estado del juego en cada tick.
      */
