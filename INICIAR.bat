@@ -63,13 +63,53 @@ echo - Donkey Kong en jaula
 echo - Sprites mejorados y animaciones
 echo - HUD visual con corazones
 echo.
+
 cd cliente-c\src
-if exist iniciar-cliente-completo.bat (
-    call iniciar-cliente-completo.bat
-) else (
-    echo ❌ ERROR: No se encuentra iniciar-cliente-completo.bat
-    pause
+
+REM Verificar si existe el ejecutable
+if not exist client_gui_completo.exe (
+    echo [!] El ejecutable no existe. Compilando primero...
+    echo.
+    echo [1/2] Verificando GCC...
+    gcc --version >nul 2>nul
+    if errorlevel 1 (
+        echo ❌ ERROR: GCC no está instalado o no está en el PATH
+        echo.
+        pause
+        goto fin
+    )
+    echo ✓ GCC encontrado
+    echo.
+
+    echo [2/2] Compilando cliente gráfico completo...
+    gcc main.c game.c network.c render.c input.c sprites.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
+
+    if errorlevel 1 (
+        echo ❌ ERROR: La compilación falló
+        pause
+        goto fin
+    )
+    echo ✓ Compilado correctamente
+    echo.
 )
+
+echo Ejecutando cliente gráfico completo...
+echo.
+echo IMPORTANTE:
+echo 1. Asegúrate de que el servidor esté corriendo primero
+echo 2. Usa las teclas W/A/S/D para moverte
+echo 3. ESPACIO para saltar, E para agarrar liana
+echo 4. ESC para salir
+echo.
+echo Iniciando en 2 segundos...
+timeout /t 2 /nobreak > nul
+
+start "" client_gui_completo.exe
+
+echo.
+echo ✓ Cliente gráfico completo iniciado
+echo.
+timeout /t 2 > nul
 goto fin
 
 :verificar
