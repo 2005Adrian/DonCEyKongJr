@@ -31,10 +31,10 @@ if errorlevel 1 (
 echo ✓ GCC encontrado
 echo.
 
-echo [2/3] Compilando cliente gráfico completo (modular)...
+echo [2/3] Compilando cliente gráfico completo (modular + sprites)...
 echo ----------------------------------------
-echo   Estructura modular: main.c + game.c + network.c + render.c + input.c
-gcc main.c game.c network.c render.c input.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
+echo   Estructura modular: main.c + game.c + network.c + render.c + input.c + sprites.c
+gcc main.c game.c network.c render.c input.c sprites.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
 
 if errorlevel 1 (
     echo.

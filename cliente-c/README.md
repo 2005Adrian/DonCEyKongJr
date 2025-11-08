@@ -91,11 +91,14 @@ La versión modular separa el código en:
 El juego soporta sprites en formato BMP. Lee [sprites/README.md](sprites/README.md) para instrucciones detalladas.
 
 **Rápido:**
-1. Crea imágenes BMP de 24-bit en Paint o GIMP
+1. Crea imágenes BMP de 24-bit en Paint o GIMP con **FONDO NEGRO**
 2. Guárdalas en `cliente-c/sprites/`
-3. Nombres: `jr.bmp`, `donkey.bmp`, `cocodrilo_rojo.bmp`, etc.
-4. Fondo blanco = transparente
-5. Reinicia el juego
+3. Nombres: `jr_frente.bmp`, `jr_subiendo.bmp`, `jr_bajando.bmp`, etc.
+4. **Fondo negro = transparente** (RGB 0,0,0)
+5. El juego selecciona automáticamente el sprite según la acción
+6. Reinicia el juego
+
+**Animaciones de Jr**: El juego tiene 6 animaciones diferentes para Jr (subiendo, bajando, frente, izquierda, derecha, saltando).
 
 Si no hay sprites, el juego usa gráficos dibujados (funciona igual).
 

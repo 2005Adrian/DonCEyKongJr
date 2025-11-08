@@ -21,6 +21,9 @@ bin/
 .vscode/
 *.code-workspace
 
+# Claude Code
+.claude/
+
 # NetBeans
 nbproject/
 nbbuild/
@@ -70,3 +73,7 @@ limpiar-proyecto.ps1
 # Archivos temporales de compilación
 cliente-c/src/cliente_temp.c
 cliente-c/src/cliente_red.exe
+
+# Archivos de debug y temporales
+cliente-c/src/err.txt
+cliente-c/src/out.txt
