@@ -1,11 +1,11 @@
+#include "render.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
 #include <math.h>
-#include "render.h"
 #include "game.h"
 #include "structs.h"
+#include "sprites.h"
 
 // Dimensiones mejoradas
 #define WINDOW_WIDTH 900
@@ -152,6 +152,11 @@ void DibujarAbismo(HDC hdc) {
  * Dibuja Donkey Kong en jaula
  */
 void DibujarDonkeyKong(HDC hdc) {
+    // Usar sprite si está disponible
+    if (sprite_donkey.bitmap) {
+        dibujarSpriteEscalado(hdc, &sprite_donkey, g_donkeyPosX - 30, g_donkeyPosY - 20, 60, 70);
+    }
+
     // Jaula (barras verticales)
     HPEN hPenJaula = CreatePen(PS_SOLID, 4, COLOR_JAULA);
     HPEN hPenOld = SelectObject(hdc, hPenJaula);
@@ -163,30 +168,23 @@ void DibujarDonkeyKong(HDC hdc) {
     SelectObject(hdc, hPenOld);
     DeleteObject(hPenJaula);
 
-    // Donkey Kong (gorila grande)
-    HBRUSH hBrushDonkey = CreateSolidBrush(COLOR_DONKEY);
-
-    // Cuerpo
-    Ellipse(hdc, g_donkeyPosX - 30, g_donkeyPosY, g_donkeyPosX + 30, g_donkeyPosY + 45);
-
-    // Cabeza
-    Ellipse(hdc, g_donkeyPosX - 25, g_donkeyPosY - 20, g_donkeyPosX + 25, g_donkeyPosY + 10);
-
-    // Ojos (tristes)
-    HBRUSH hBrushEyes = CreateSolidBrush(RGB(255, 255, 255));
-    SelectObject(hdc, hBrushEyes);
-    Ellipse(hdc, g_donkeyPosX - 15, g_donkeyPosY - 10, g_donkeyPosX - 5, g_donkeyPosY);
-    Ellipse(hdc, g_donkeyPosX + 5, g_donkeyPosY - 10, g_donkeyPosX + 15, g_donkeyPosY);
-    DeleteObject(hBrushEyes);
-
-    // Pupilas
-    HBRUSH hBrushPupil = CreateSolidBrush(RGB(0, 0, 0));
-    SelectObject(hdc, hBrushPupil);
-    Ellipse(hdc, g_donkeyPosX - 12, g_donkeyPosY - 7, g_donkeyPosX - 8, g_donkeyPosY - 3);
-    Ellipse(hdc, g_donkeyPosX + 8, g_donkeyPosY - 7, g_donkeyPosX + 12, g_donkeyPosY - 3);
-    DeleteObject(hBrushPupil);
-
-    DeleteObject(hBrushDonkey);
+    // Si no hay sprite, dibujar forma básica
+    if (!sprite_donkey.bitmap) {
+        HBRUSH hBrushDonkey = CreateSolidBrush(COLOR_DONKEY);
+        Ellipse(hdc, g_donkeyPosX - 30, g_donkeyPosY, g_donkeyPosX + 30, g_donkeyPosY + 45);
+        Ellipse(hdc, g_donkeyPosX - 25, g_donkeyPosY - 20, g_donkeyPosX + 25, g_donkeyPosY + 10);
+        HBRUSH hBrushEyes = CreateSolidBrush(RGB(255, 255, 255));
+        SelectObject(hdc, hBrushEyes);
+        Ellipse(hdc, g_donkeyPosX - 15, g_donkeyPosY - 10, g_donkeyPosX - 5, g_donkeyPosY);
+        Ellipse(hdc, g_donkeyPosX + 5, g_donkeyPosY - 10, g_donkeyPosX + 15, g_donkeyPosY);
+        DeleteObject(hBrushEyes);
+        HBRUSH hBrushPupil = CreateSolidBrush(RGB(0, 0, 0));
+        SelectObject(hdc, hBrushPupil);
+        Ellipse(hdc, g_donkeyPosX - 12, g_donkeyPosY - 7, g_donkeyPosX - 8, g_donkeyPosY - 3);
+        Ellipse(hdc, g_donkeyPosX + 8, g_donkeyPosY - 7, g_donkeyPosX + 12, g_donkeyPosY - 3);
+        DeleteObject(hBrushPupil);
+        DeleteObject(hBrushDonkey);
+    }
 
     // Texto "HELP!"
     SetBkMode(hdc, TRANSPARENT);
@@ -207,6 +205,24 @@ void DibujarJugadorMejorado(HDC hdc, Jugador* j) {
     // Efecto de golpe (parpadeo)
     if (g_efectoGolpe > 0 && g_animacionFrame % 4 < 2) return;
 
+    // OPCIÓN 1: USAR SPRITES SI ESTÁN DISPONIBLES
+    // Calcular velocidades aproximadas (simplificado)
+    static double ultimaY = 0;
+    static double ultimaX = 0;
+    double velocidadY = j->y - ultimaY;
+    double velocidadX = (j->liana * 100) - ultimaX;
+    ultimaY = j->y;
+    ultimaX = j->liana * 100;
+
+    Sprite* spriteActual = obtenerSpriteJr(velocidadY, velocidadX, j->liana >= 0);
+
+    if (spriteActual && spriteActual->bitmap) {
+        // Dibujar sprite con tamaño fijo (40x40)
+        dibujarSpriteEscalado(hdc, spriteActual, x - 20, y - 35, 40, 50);
+        return;
+    }
+
+    // OPCIÓN 2: FALLBACK A GRÁFICOS GDI (si no hay sprite)
     // Cuerpo (camisa roja)
     HBRUSH hBrushBody = CreateSolidBrush(COLOR_JR_ROJO);
     SelectObject(hdc, hBrushBody);
@@ -258,45 +274,38 @@ void DibujarCocodriloMejorado(HDC hdc, Cocodrilo* c) {
 
     if (x < 0 || y < 0) return;
 
+    // Usar sprite si está disponible
+    Sprite* spr = (strcmp(c->kind, "ROJO") == 0) ? &sprite_cocodrilo_rojo : &sprite_cocodrilo_azul;
+    if (spr->bitmap) {
+        dibujarSpriteEscalado(hdc, spr, x - 25, y - 20, 50, 40);
+        return;
+    }
+
+    // Fallback con GDI
     COLORREF color = strcmp(c->kind, "ROJO") == 0 ? COLOR_CROC_ROJO : COLOR_CROC_AZUL;
     HBRUSH hBrush = CreateSolidBrush(color);
     SelectObject(hdc, hBrush);
-
-    // Cuerpo principal
     Ellipse(hdc, x - 22, y - 12, x + 22, y + 12);
-
-    // Cabeza con boca
     int bocaAbierta = (g_animacionFrame / 8) % 2;
     Ellipse(hdc, x + 15, y - 10, x + 30, y + 10);
-
-    // Boca
     if (bocaAbierta) {
         HBRUSH hBrushMouth = CreateSolidBrush(RGB(255, 100, 100));
         SelectObject(hdc, hBrushMouth);
         Ellipse(hdc, x + 20, y - 3, x + 28, y + 8);
         DeleteObject(hBrushMouth);
     }
-
-    // Ojos
     HBRUSH hBrushEye = CreateSolidBrush(RGB(255, 255, 0));
     SelectObject(hdc, hBrushEye);
     Ellipse(hdc, x + 18, y - 8, x + 23, y - 3);
     DeleteObject(hBrushEye);
-
-    // Pupila
     HBRUSH hBrushPupil = CreateSolidBrush(RGB(0, 0, 0));
     SelectObject(hdc, hBrushPupil);
     Ellipse(hdc, x + 20, y - 7, x + 22, y - 5);
     DeleteObject(hBrushPupil);
-
-    // Cola
     POINT cola[3] = {{x - 22, y}, {x - 32, y - 8}, {x - 32, y + 8}};
     Polygon(hdc, cola, 3);
-
-    // Patas (pequeñas)
     Rectangle(hdc, x - 15, y + 10, x - 10, y + 18);
     Rectangle(hdc, x + 5, y + 10, x + 10, y + 18);
-
     DeleteObject(hBrush);
 }
 
@@ -309,27 +318,33 @@ void DibujarFrutaMejorada(HDC hdc, Fruta* f) {
 
     if (x < 0 || y < 0) return;
 
-    // Efecto brillo cuando está cerca
-    if (g_efectoFruta > 0) {
-        int size = 15 + (g_efectoFruta / 2);
-        HBRUSH hBrushGlow = CreateSolidBrush(RGB(255, 255, 200));
-        SelectObject(hdc, hBrushGlow);
-        Ellipse(hdc, x - size, y - size, x + size, y + size);
-        DeleteObject(hBrushGlow);
+    // Usar sprite si está disponible
+    if (sprite_banana.bitmap) {
+        dibujarSpriteEscalado(hdc, &sprite_banana, x - 10, y - 10, 20, 20);
+    } else {
+        // Fallback: banana geométrica
+        // Efecto brillo cuando está cerca
+        if (g_efectoFruta > 0) {
+            int size = 15 + (g_efectoFruta / 2);
+            HBRUSH hBrushGlow = CreateSolidBrush(RGB(255, 255, 200));
+            SelectObject(hdc, hBrushGlow);
+            Ellipse(hdc, x - size, y - size, x + size, y + size);
+            DeleteObject(hBrushGlow);
+        }
+
+        // Banana (forma curvada)
+        HBRUSH hBrushFruit = CreateSolidBrush(COLOR_FRUTA);
+        SelectObject(hdc, hBrushFruit);
+
+        // Cuerpo de banana (varios círculos)
+        for (int i = 0; i < 5; i++) {
+            int offsetX = (int)(i * 3 - 6);
+            int offsetY = (int)(sin(i * 0.5) * 4);
+            Ellipse(hdc, x + offsetX - 5, y + offsetY - 6, x + offsetX + 5, y + offsetY + 6);
+        }
+
+        DeleteObject(hBrushFruit);
     }
-
-    // Banana (forma curvada)
-    HBRUSH hBrushFruit = CreateSolidBrush(COLOR_FRUTA);
-    SelectObject(hdc, hBrushFruit);
-
-    // Cuerpo de banana (varios círculos)
-    for (int i = 0; i < 5; i++) {
-        int offsetX = (int)(i * 3 - 6);
-        int offsetY = (int)(sin(i * 0.5) * 4);
-        Ellipse(hdc, x + offsetX - 5, y + offsetY - 6, x + offsetX + 5, y + offsetY + 6);
-    }
-
-    DeleteObject(hBrushFruit);
 
     // Puntos
     char puntosText[16];
@@ -349,20 +364,16 @@ void DibujarFrutaMejorada(HDC hdc, Fruta* f) {
  * Dibuja corazón
  */
 void DibujarCorazon(HDC hdc, int x, int y, int size) {
+    if (sprite_corazon.bitmap) {
+        dibujarSpriteEscalado(hdc, &sprite_corazon, x - size/2, y - size/2, size, size);
+        return;
+    }
     HBRUSH hBrush = CreateSolidBrush(COLOR_VIDA);
     SelectObject(hdc, hBrush);
-
-    // Corazón simple con círculos y triángulo
     Ellipse(hdc, x - size/2, y - size/2, x + size/4, y + size/2);
     Ellipse(hdc, x - size/4, y - size/2, x + size/2, y + size/2);
-
-    POINT triangle[3] = {
-        {x - size/2, y},
-        {x + size/2, y},
-        {x, y + size}
-    };
+    POINT triangle[3] = {{x - size/2, y}, {x + size/2, y}, {x, y + size}};
     Polygon(hdc, triangle, 3);
-
     DeleteObject(hBrush);
 }
 

@@ -124,8 +124,8 @@ echo [2/2] Compilando CLIENTE COMPLETO (C)...
 echo ----------------------------------------
 cd cliente-c\src
 
-echo   Compilando cliente gráfico completo (modular)...
-gcc main.c game.c network.c render.c input.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
+echo   Compilando cliente gráfico completo (modular + sprites)...
+gcc main.c game.c network.c render.c input.c sprites.c -o client_gui_completo.exe -lws2_32 -lgdi32 -lmsimg32 -mwindows
 if errorlevel 1 (
     echo ❌ ERROR al compilar el cliente gráfico completo
     pause
