@@ -4,11 +4,23 @@ Esta carpeta contiene los sprites (imágenes) del juego.
 
 ## 📋 Sprites Requeridos
 
-Coloca aquí tus imágenes en formato **BMP** (24-bit):
+Coloca aquí tus imágenes en formato **BMP** (24-bit) con **FONDO NEGRO**:
+
+### 🎬 Animaciones de Jr (6 sprites):
 
 | Archivo | Descripción | Tamaño Recomendado |
 |---------|-------------|-------------------|
-| `jr.bmp` | Jr con gorra roja | 32x32 px |
+| `jr_frente.bmp` | Jr parado de frente | 32x32 px |
+| `jr_subiendo.bmp` | Jr subiendo liana | 32x32 px |
+| `jr_bajando.bmp` | Jr bajando liana | 32x32 px |
+| `jr_izquierda.bmp` | Jr moviéndose izquierda | 32x32 px |
+| `jr_derecha.bmp` | Jr moviéndose derecha | 32x32 px |
+| `jr_saltando.bmp` | Jr saltando/colgado | 32x32 px |
+
+### 🎮 Otros Sprites:
+
+| Archivo | Descripción | Tamaño Recomendado |
+|---------|-------------|-------------------|
 | `donkey.bmp` | Donkey Kong | 64x64 px |
 | `cocodrilo_rojo.bmp` | Cocodrilo rojo | 48x32 px |
 | `cocodrilo_azul.bmp` | Cocodrilo azul | 48x32 px |
@@ -21,17 +33,18 @@ Coloca aquí tus imágenes en formato **BMP** (24-bit):
 
 1. Abre **Paint**
 2. **Archivo → Nuevo** → Cambia tamaño a 32x32 (o el tamaño que necesites)
-3. Dibuja tu sprite
-4. **Fondo blanco = transparente** (importante!)
-5. **Guardar como → BMP → BMP de 24 bits**
+3. **Rellena el fondo con NEGRO** (color #000000)
+4. Dibuja tu sprite sobre el fondo negro
+5. **Fondo NEGRO = transparente** (importante!)
+6. **Guardar como → BMP → BMP de 24 bits**
 
 ### Opción 2: GIMP (Gratis)
 
 1. Abre GIMP
 2. **Archivo → Crear → Imagen** (32x32)
-3. Dibuja tu sprite
-4. **Capa → Transparencia → Color a Alfa** (elige blanco)
-5. **Archivo → Exportar como** → Guarda como `.bmp`
+3. **Rellena el fondo con negro** (color #000000)
+4. Dibuja tu sprite sobre el fondo negro
+5. **Archivo → Exportar como** → Guarda como `.bmp` (24-bit)
 
 ### Opción 3: Usar Pixel Art Online
 
@@ -42,29 +55,37 @@ Visita: https://www.pixilart.com/draw
 
 ## 🖼️ Plantillas de Ejemplo
 
-### Jr (32x32)
+### Jr Frente (32x32)
 ```
+🎨 FONDO NEGRO
 Gorra roja arriba
 Cara piel en medio
 Cuerpo rojo
 Brazos y piernas pequeños
-Fondo blanco
+```
+
+### Jr Subiendo (32x32)
+```
+🎨 FONDO NEGRO
+Gorra roja
+Brazos extendidos hacia arriba
+Piernas dobladas
 ```
 
 ### Cocodrilo (48x32)
 ```
+🎨 FONDO NEGRO
 Cuerpo rojo/azul alargado
 Boca abierta con dientes
 Ojos amarillos
 Cola puntiaguda
-Fondo blanco
 ```
 
 ### Banana (24x24)
 ```
+🎨 FONDO NEGRO
 Forma curva amarilla
 Puntas verdes/marrones
-Fondo blanco
 ```
 
 ## 🔧 Cómo Funciona
@@ -82,8 +103,9 @@ Por ejemplo:
 ## 🎯 Consejos de Diseño
 
 ### Transparencia
-- **Fondo BLANCO** será transparente
-- Todo lo que NO sea blanco puro se verá
+- **Fondo NEGRO puro (RGB 0,0,0)** será transparente
+- Todo lo que NO sea negro puro se verá
+- Usa colores brillantes para que contrasten con el fondo oscuro del juego
 
 ### Tamaños
 - Los sprites se **escalarán automáticamente** al tamaño del juego
@@ -100,12 +122,13 @@ Por ejemplo:
 
 Si quieres sprites de prueba, crea archivos BMP simples en Paint:
 
-**jr.bmp (ejemplo rápido):**
+**jr_frente.bmp (ejemplo rápido):**
 1. Paint → 32x32
-2. Dibuja círculo piel (cabeza)
-3. Rectángulo rojo arriba (gorra)
-4. Rectángulo rojo abajo (cuerpo)
-5. Guardar como BMP
+2. **Rellena todo con NEGRO**
+3. Dibuja círculo piel (cabeza)
+4. Rectángulo rojo arriba (gorra)
+5. Rectángulo rojo abajo (cuerpo)
+6. Guardar como BMP (24-bit)
 
 ## 🚀 Uso en el Código
 
@@ -137,5 +160,12 @@ liberarSprites();
 ## 📝 Notas
 
 - Los sprites deben estar en **BMP de 24-bit** (no 8-bit ni 32-bit)
-- El blanco puro (RGB 255,255,255) es transparente
-- Si quieres cambiar el color transparente, edita `sprites.c` línea con `RGB(255, 255, 255)`
+- El **negro puro (RGB 0,0,0)** es transparente
+- Si quieres cambiar el color transparente, edita `sprites.c` líneas con `RGB(0, 0, 0)` a otro color
+- **Animaciones de Jr**: El juego elige automáticamente el sprite correcto según el movimiento:
+  - Subiendo → usa `jr_subiendo.bmp`
+  - Bajando → usa `jr_bajando.bmp`
+  - Izquierda → usa `jr_izquierda.bmp`
+  - Derecha → usa `jr_derecha.bmp`
+  - Saltando → usa `jr_saltando.bmp`
+  - Parado → usa `jr_frente.bmp`

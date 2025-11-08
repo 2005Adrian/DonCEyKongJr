@@ -9,6 +9,7 @@
 #include "network.h"
 #include "render.h"
 #include "input.h"
+#include "sprites.h"
 
 // Prototipo del procedimiento de ventana
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -65,6 +66,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ShowWindow(g_hwnd, nCmdShow);
     UpdateWindow(g_hwnd);
 
+    // Cargar sprites (si existen)
+    printf("\n");
+    cargarSprites();
+    printf("\n");
+
     // Conectar al servidor
     if (conectarServidor()) {
         g_conectado = 1;
@@ -86,7 +92,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         DispatchMessage(&msg);
     }
 
+    // Limpiar recursos
     desconectarServidor();
+    liberarSprites();
+
     return msg.wParam;
 }
 
