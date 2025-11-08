@@ -1,6 +1,10 @@
 #ifndef RENDER_H
 #define RENDER_H
 
+// Evita que windows.h incluya winsock.h y conflicto con winsock2
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <winsock2.h>
 #include <windows.h>
 #include "structs.h"
