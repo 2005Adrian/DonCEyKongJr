@@ -1,7 +1,12 @@
 plugins {
     id 'java'
     id 'application'
+    id 'org.beryx.jlink' version '3.0.1'
 }
+
+// ========================================
+// Configuración del Proyecto
+// ========================================
 
 group = 'cr.tec.donceykongjr'
 version = '1.0.0'
@@ -10,51 +15,262 @@ repositories {
     mavenCentral()
 }
 
+// ========================================
+// Dependencias
+// ========================================
+
 dependencies {
+    // Serialización JSON
     implementation 'com.google.code.gson:gson:2.11.0'
-    
-    // Dependencias para pruebas (opcional)
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+
+    // JNA para integración con código nativo (opcional)
+    implementation 'net.java.dev.jna:jna:5.15.0'
+    implementation 'net.java.dev.jna:jna-platform:5.15.0'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-// Configurar toolchain para usar Java 21
+// ========================================
+// Configuración de Java
+// ========================================
+
 java {
+    // Usar Java 21 LTS con Gradle Toolchains
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Suprimir warnings de Java 8 obsoleto
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ['-Xlint:-options']
+tasks.withType(JavaCompile).configureEach {
+    // Compilar a bytecode Java 21 para mejor compatibilidad
+    options.release = 21
+    options.encoding = 'UTF-8'
+    options.compilerArgs += [
+        '-Xlint:unchecked',
+        '-Xlint:deprecation'
+    ]
 }
+
+// ========================================
+// Configuración de Application
+// ========================================
 
 application {
-    // Clase principal del servidor
     mainClass = 'cr.tec.donceykongjr.server.Main'
+    applicationDefaultJvmArgs = [
+        '-Xms256m',
+        '-Xmx1024m'
+    ]
 }
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+// ========================================
+// Configuración de Testing
+// ========================================
 
-// Suprimir warnings de Java 8 obsoleto
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ['-Xlint:-options']
-}
-
-// Configurar toolchain para usar Java 8 para compilar, pero Java 21 para ejecutar Gradle
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = false
     }
 }
 
-tasks.withType(Test).configureEach {
-    useJUnitPlatform()
+// ========================================
+// Configuración de Run
+// ========================================
+
+tasks.named('run') {
+    standardInput = System.in
+
+    // Permitir debugging
+    if (project.hasProperty('debug')) {
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+    }
 }
 
-tasks.run {
-    standardInput = System.in
+// ========================================
+// Build del Cliente C con CMake
+// ========================================
+
+task buildNativeClient(type: Exec) {
+    group = 'build'
+    description = 'Compila el cliente nativo C usando CMake'
+
+    workingDir "${projectDir}/../cliente-c"
+
+    def buildDir = "${workingDir}/build"
+    def cmakeArgs = [
+        'cmake',
+        '-S', '.',
+        '-B', 'build',
+        '-DCMAKE_BUILD_TYPE=Release'
+    ]
+
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        cmakeArgs += ['-G', 'MinGW Makefiles']
+    }
+
+    commandLine cmakeArgs
+
+    doLast {
+        exec {
+            workingDir buildDir
+            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                commandLine 'mingw32-make'
+            } else {
+                commandLine 'make'
+            }
+        }
+    }
 }
+
+task copyNativeClient(type: Copy, dependsOn: buildNativeClient) {
+    group = 'build'
+    description = 'Copia el cliente nativo compilado al directorio de recursos'
+
+    from "${projectDir}/../cliente-c/build"
+    include '*.exe', '*.dll', 'DonCEyKongJr-Client*', 'donceykong-client'
+    into "${buildDir}/resources/main/native"
+
+    doLast {
+        // Copiar sprites también
+        copy {
+            from "${projectDir}/../cliente-c/sprites"
+            into "${buildDir}/resources/main/native/sprites"
+        }
+    }
+}
+
+// ========================================
+// jlink - Runtime Customizado
+// ========================================
+
+jlink {
+    // Opciones de optimización
+    options = [
+        '--strip-debug',
+        '--no-header-files',
+        '--no-man-pages',
+        '--compress=2',
+        '--bind-services'
+    ]
+
+    // Launcher principal
+    launcher {
+        name = 'DonCEyKongJr-Server'
+        jvmArgs = application.applicationDefaultJvmArgs
+    }
+
+    // Configuración de imagen
+    imageName = 'DonCEyKongJr'
+    imageZip = project.file("${buildDir}/distributions/DonCEyKongJr-runtime-${version}.zip")
+
+    // Detectar módulos automáticamente desde las dependencias
+    forceMerge 'gson', 'jna', 'jna-platform'
+
+    // Módulos adicionales de Java SE necesarios
+    addOptions '--add-modules', 'java.desktop,java.logging,java.naming,jdk.unsupported'
+}
+
+// ========================================
+// jpackage - Instaladores Multiplataforma
+// ========================================
+
+jpackage {
+    imageName = 'DonCEyKongJr'
+    installerName = 'DonCEyKongJr'
+    appVersion = version
+    vendor = 'TEC - DonCEyKongJr Team'
+    copyright = 'Copyright © 2025'
+
+    installerOptions += [
+        '--description', 'DonCEyKong Jr - Multiplayer Game Server',
+        '--app-content', "${projectDir}/../cliente-c/build"
+    ]
+
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        installerType = 'msi'
+        installerOptions += [
+            '--win-dir-chooser',
+            '--win-menu',
+            '--win-shortcut',
+            '--win-menu-group', 'DonCEyKongJr'
+        ]
+    } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+        installerType = 'dmg'
+        installerOptions += [
+            '--mac-package-name', 'DonCEyKongJr'
+        ]
+    } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+        installerType = 'deb'
+        installerOptions += [
+            '--linux-shortcut',
+            '--linux-menu-group', 'Games'
+        ]
+    }
+}
+
+// ========================================
+// Tasks Personalizados
+// ========================================
+
+task buildAll(dependsOn: [build, buildNativeClient, copyNativeClient]) {
+    group = 'build'
+    description = 'Compila servidor Java y cliente nativo C'
+}
+
+task packageAll(dependsOn: [buildAll, jpackage]) {
+    group = 'distribution'
+    description = 'Crea el instalador completo con servidor y cliente'
+}
+
+task cleanAll(dependsOn: clean) {
+    group = 'build'
+    description = 'Limpia todos los artefactos de build (Java + C)'
+
+    doLast {
+        delete "${projectDir}/../cliente-c/build"
+    }
+}
+
+// ========================================
+// Task de Ayuda
+// ========================================
+
+task help {
+    group = 'help'
+    description = 'Muestra ayuda sobre tasks disponibles'
+
+    doLast {
+        println '''
+        ╔════════════════════════════════════════════════════════╗
+        ║         DonCEyKongJr - Build Tasks                     ║
+        ╠════════════════════════════════════════════════════════╣
+        ║                                                        ║
+        ║  DESARROLLO:                                           ║
+        ║    ./gradlew run           - Ejecutar servidor         ║
+        ║    ./gradlew test          - Ejecutar tests            ║
+        ║    ./gradlew clean         - Limpiar build             ║
+        ║                                                        ║
+        ║  BUILD:                                                ║
+        ║    ./gradlew build         - Compilar servidor Java    ║
+        ║    ./gradlew buildNativeClient - Compilar cliente C    ║
+        ║    ./gradlew buildAll      - Compilar todo             ║
+        ║                                                        ║
+        ║  DISTRIBUCIÓN:                                         ║
+        ║    ./gradlew jlink         - Crear runtime custom      ║
+        ║    ./gradlew jpackage      - Crear instalador          ║
+        ║    ./gradlew packageAll    - Crear instalador completo ║
+        ║                                                        ║
+        ║  LIMPIEZA:                                             ║
+        ║    ./gradlew cleanAll      - Limpiar todo              ║
+        ║                                                        ║
+        ╚════════════════════════════════════════════════════════╝
+        '''
+    }
+}
+
+defaultTasks 'help'

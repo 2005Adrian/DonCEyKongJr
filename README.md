@@ -1,186 +1,394 @@
-🧠 GUÍA PARA EJECUTAR EL SERVIDOR Y CONECTARSE DESDE C
-Proyecto: DonCEy Kong Jr – Comunicación cliente-servidor
+# DonCEyKongJr - Multiplayer Game
+
+<div align="center">
+
+![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
+![C](https://img.shields.io/badge/C-11-blue?logo=c)
+![Gradle](https://img.shields.io/badge/Gradle-8.11.1-green?logo=gradle)
+![CMake](https://img.shields.io/badge/CMake-3.20+-blue?logo=cmake)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+**Juego multiplayer cliente-servidor de DonkeyKong Jr**
+
+Cliente nativo en C • Servidor en Java • Instaladores multiplataforma
+
+</div>
 
 ---
 
-## 📋 Documentación del Proyecto
+## 📋 Descripción
 
-**IMPORTANTE**: El proyecto ha sido recientemente limpiado y reorganizado.
+DonCEyKongJr es un juego multiplayer basado en arquitectura cliente-servidor:
 
-### 📚 Documentación
-- 📘 [**VERSIONES.md**](VERSIONES.md) - Versiones exactas de software necesarias (Java, Gradle, GCC, etc.)
-- 📗 [**LIMPIEZA_REALIZADA.md**](LIMPIEZA_REALIZADA.md) - Reporte detallado de limpieza y organización
-- 🚀 [**INSTRUCCIONES_SIMPLES.md**](INSTRUCCIONES_SIMPLES.md) - Guía rápida para ejecutar (localhost)
-
-### 🎮 Scripts de Ejecución (NUEVO)
-- 🎯 [**INICIAR.bat**](INICIAR.bat) - Launcher principal con menú (¡Úsalo!)
-- ⚙️ [**check-versions.bat**](check-versions.bat) - Verificar versiones instaladas
-- 🖥️ [**servidor-java/iniciar-servidor.bat**](servidor-java/iniciar-servidor.bat) - Ejecutar servidor directamente
-- 💻 [**cliente-c/src/iniciar-cliente.bat**](cliente-c/src/iniciar-cliente.bat) - Ejecutar cliente
-
-**Estado del proyecto**: ✅ BUILD SUCCESSFUL - Listo para desarrollo
-
-### ⚡ Inicio Rápido
-1. Haz doble clic en `INICIAR.bat`
-2. Selecciona `[1]` para servidor (déjalo corriendo)
-3. Abre otra ventana de `INICIAR.bat`
-4. Selecciona `[2]` para cliente
-5. ¡Listo! Servidor y cliente corriendo en localhost
+- **Servidor (Java)**: Maneja la lógica del juego, estado compartido, y sincronización entre clientes
+- **Cliente (C)**: Interfaz gráfica nativa con renderizado optimizado usando GDI (Windows)
+- **Protocolo**: Comunicación TCP/IP con mensajes JSON
+- **Arquitectura**: Patrón Observer, Factory, y sincronización a 20 TPS
 
 ---
 
-📁 Estructura general del proyecto
-Proyecto3/
+## 🚀 Inicio Rápido ("Un Botón")
+
+### Prerrequisitos
+
+Asegúrate de tener instalado:
+
+| Herramienta | Versión Mínima | Descarga |
+|-------------|----------------|----------|
+| **Java JDK** | 21 (Temurin LTS) | [Adoptium](https://adoptium.net/) |
+| **CMake** | 3.20+ | [cmake.org](https://cmake.org/download/) |
+| **GCC/MinGW** | 11+ | [MinGW-w64](https://www.mingw-w64.org/) (Windows) |
+
+### Build y Ejecución
+
+#### Opción 1: Build completo (Servidor + Cliente)
+
+```bash
+cd servidor-java
+./gradlew buildAll
+```
+
+#### Opción 2: Solo servidor
+
+```bash
+cd servidor-java
+./gradlew build
+./gradlew run
+```
+
+El servidor se iniciará en `localhost:5555`
+
+#### Opción 3: Solo cliente nativo
+
+```bash
+cd cliente-c
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+./DonCEyKongJr-Client
+```
+
+En Windows con MinGW:
+
+```bash
+cd cliente-c
+mkdir build && cd build
+cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+mingw32-make
+.\DonCEyKongJr-Client.exe
+```
+
+---
+
+## 📦 Crear Instaladores
+
+### Instalador completo (jpackage)
+
+Genera instaladores nativos para el sistema operativo actual:
+
+```bash
+cd servidor-java
+./gradlew packageAll
+```
+
+Esto creará:
+- **Windows**: `servidor-java/build/jpackage/DonCEyKongJr-1.0.0.msi`
+- **macOS**: `servidor-java/build/jpackage/DonCEyKongJr-1.0.0.dmg`
+- **Linux**: `servidor-java/build/jpackage/DonCEyKongJr-1.0.0.deb`
+
+Los instaladores incluyen:
+✅ Runtime Java optimizado (jlink)
+✅ Cliente nativo compilado
+✅ Sprites y recursos
+✅ Lanzadores del sistema
+
+### Runtime portable (jlink)
+
+Crear un runtime Java customizado sin instalador:
+
+```bash
+cd servidor-java
+./gradlew jlink
+```
+
+El runtime se generará en `servidor-java/build/jlink/image/`
+
+Para ejecutar:
+
+```bash
+cd servidor-java/build/jlink/image/bin
+./DonCEyKongJr-Server
+```
+
+---
+
+## 🛠️ Comandos de Gradle
+
+### Desarrollo
+
+```bash
+# Ejecutar servidor en modo desarrollo
+./gradlew run
+
+# Ejecutar con debugging (puerto 5005)
+./gradlew run -Pdebug
+
+# Ejecutar tests
+./gradlew test
+
+# Ver ayuda de tasks disponibles
+./gradlew help
+```
+
+### Build
+
+```bash
+# Build solo servidor Java
+./gradlew build
+
+# Build solo cliente C nativo
+./gradlew buildNativeClient
+
+# Build todo (servidor + cliente)
+./gradlew buildAll
+```
+
+### Distribución
+
+```bash
+# Crear runtime customizado con jlink
+./gradlew jlink
+
+# Crear instalador con jpackage
+./gradlew jpackage
+
+# Crear instalador completo (build + jlink + jpackage)
+./gradlew packageAll
+```
+
+### Limpieza
+
+```bash
+# Limpiar solo build de Java
+./gradlew clean
+
+# Limpiar todo (Java + C)
+./gradlew cleanAll
+```
+
+---
+
+## 🏗️ Estructura del Proyecto
+
+```
+DonCEyKongJr/
+├── .github/
+│   └── workflows/
+│       └── build.yml              # CI/CD multiplataforma
 │
-├── servidor-java/             # Servidor (backend) en Java (Adrián)
-│   ├── build.gradle
-│   ├── settings.gradle
+├── servidor-java/                 # SERVIDOR JAVA
+│   ├── build.gradle               # Configuración Gradle moderna
+│   ├── gradle.properties          # Propiedades del proyecto
+│   ├── gradlew / gradlew.bat      # Gradle Wrapper
+│   └── src/main/java/
+│       └── cr/tec/donceykongjr/server/
+│           ├── Main.java          # Punto de entrada
+│           ├── network/           # Servidor TCP, protocolo JSON
+│           ├── logic/             # GameManager, GameLoop (20 TPS)
+│           ├── gui/               # Interfaz gráfica admin
+│           └── util/              # Utilidades, logging, config
+│
+├── cliente-c/                     # CLIENTE NATIVO C
+│   ├── CMakeLists.txt             # Build multiplataforma
+│   ├── sprites/                   # Recursos gráficos
 │   └── src/
-│       └── main/java/cr/tec/donceykongjr/server/
-│           ├── Main.java
-│           ├── network/
-│           │   ├── ServidorJuego.java
-│           │   └── ManejadorCliente.java
-│           └── logic/
-│               ├── Juego.java
-│               └── entidades/...
+│       ├── main.c                 # Punto de entrada
+│       ├── network.c/h            # Cliente TCP
+│       ├── render.c/h             # Renderizado GDI
+│       ├── game.c/h               # Lógica del juego
+│       ├── sprites.c/h            # Gestión de sprites
+│       └── input.c/h              # Manejo de input
 │
-└── cliente-c/                 # Cliente (frontend) en C (José Pablo y Daniel)
-    └── src/
-        └── cliente_prueba.c
+├── .gitignore                     # Ignora builds, binarios, temporales
+└── README.md                      # Este archivo
+```
 
-⚙️ 1️⃣ Requisitos de instalación
-🧩 Para el servidor (Java)
+---
 
-Tener instalado Java JDK 21 o superior
-(en este proyecto se usa OpenJDK 25 Temurin)
+## 🔧 Configuración Técnica
 
-Tener instalado Gradle 8+
+### Java (Servidor)
 
-Usar un editor compatible, como VS Code o IntelliJ
+- **JDK**: 21 (Temurin)
+- **Bytecode Target**: Java 21 (`--release 21`)
+- **Toolchain**: Gradle Toolchains con vendor=ADOPTIUM
+- **Build System**: Gradle 8.11.1
+- **Dependencias**:
+  - `com.google.code.gson:2.11.0` - Serialización JSON
+  - `net.java.dev.jna:5.15.0` - Integración con código nativo (opcional)
+  - `org.junit.jupiter:5.11.0` - Testing
 
-🧩 Para el cliente (C)
+### C (Cliente)
 
-Tener instalado un compilador C para Windows, como:
+- **Estándar**: C11
+- **Build System**: CMake 3.20+
+- **Compilador**: GCC 11+ / MinGW (Windows)
+- **Librerías**:
+  - `ws2_32` - Sockets Windows
+  - `gdi32` - Gráficos (GDI)
+  - `msimg32` - Funciones de imagen
 
-MinGW
+### Protocolo de Comunicación
 
-TDM-GCC
+- **Protocolo**: TCP/IP
+- **Puerto**: 5555 (configurable en `Config.java`)
+- **Formato**: JSON
+- **Ejemplo de mensaje**:
 
-O ejecutar desde WSL/Linux
+```json
+{
+  "tipo": "MOVIMIENTO",
+  "jugador_id": "Player_1234",
+  "x": 100,
+  "y": 50,
+  "direccion": "DERECHA"
+}
+```
 
-En Windows, el cliente usa la librería Winsock2 (-lws2_32).
+---
 
-🖥️ 2️⃣ Cómo ejecutar el servidor
+## 🤖 CI/CD (GitHub Actions)
 
-1️⃣ Abrir una ventana PowerShell o terminal en la carpeta del servidor:
+El proyecto incluye workflows automáticos que se ejecutan en cada push:
 
-cd "C:\Users\<usuario>\Documentos\.Proyecto3\servidor-java"
+### Plataformas soportadas
 
+- ✅ **Ubuntu Latest** (Linux .deb)
+- ✅ **Windows Latest** (Windows .msi)
+- ✅ **macOS Latest** (macOS .dmg)
 
-2️⃣ Ejecutar el servidor con Gradle:
+### Pipeline
 
-gradle run
+1. **Setup**: Instala JDK 21, CMake, y compiladores nativos
+2. **Build**: Compila servidor Java y cliente C
+3. **Test**: Ejecuta suite de tests
+4. **Package**: Genera instaladores con jpackage
+5. **Upload**: Sube artefactos a GitHub Actions
+6. **Release**: Publica instaladores en GitHub Releases (en tags)
 
+### Ver builds
 
-3️⃣ Si todo está correcto, verán:
+Visita la pestaña **Actions** en GitHub para ver el estado de los builds.
 
-🚀 Iniciando servidor DonCEy Kong Jr...
-Servidor iniciado en el puerto 5000
+---
 
+## 📖 Guía de Desarrollo
 
-4️⃣ Dejar esa ventana abierta (el servidor debe seguir corriendo).
-El servidor estará escuchando conexiones en el puerto 5000.
+### Agregar nueva entidad al juego
 
-💻 3️⃣ Cómo compilar y ejecutar el cliente en C
+1. Crear clase en `servidor-java/src/main/java/.../logic/entidades/`
+2. Extender `Entidad.java`
+3. Implementar lógica en `GameLoop.java`
+4. Agregar factory en `FactoryEntidad.java`
 
-1️⃣ Abrir otra ventana PowerShell y entrar a la carpeta del cliente:
+### Modificar protocolo de red
 
-cd "C:\Users\<usuario>\Documentos\.Proyecto3\cliente-c\src"
+1. Actualizar `Mensaje.java` con nuevo tipo
+2. Implementar parsing en `ManejadorCliente.java`
+3. Actualizar cliente C en `network.c` para parsear JSON
 
+### Cambiar configuración del servidor
 
-2️⃣ Compilar el cliente de prueba:
+Editar constantes en `servidor-java/src/main/java/.../util/Config.java`:
 
-gcc cliente_prueba.c -o cliente_prueba.exe -lws2_32
+```java
+public static final int PUERTO_DEFAULT = 5555;
+public static final int MAX_JUGADORES = 2;
+public static final int TICKS_POR_SEGUNDO = 20;
+```
 
+---
 
-3️⃣ Ejecutar el cliente:
+## 🐛 Troubleshooting
 
-.\cliente_prueba.exe
+### Error: "Java 21 not found"
 
+Asegúrate de tener Java 21 instalado. Gradle usará toolchains para descargar automáticamente la versión correcta:
 
-4️⃣ Si el servidor está corriendo, verán algo así:
+```bash
+# Verificar versión de Java
+java -version
 
-Conectado al servidor DonCEy Kong Jr en 127.0.0.1:5000
-Servidor: Conectado al servidor DonCEy Kong Jr!
-Mensaje >
+# Forzar re-descarga de toolchain
+./gradlew clean build --refresh-dependencies
+```
 
+### Error: "CMake not found" (Windows)
 
-5️⃣ Escribir un mensaje (por ejemplo hola)
-y el servidor responderá:
+Instala CMake y agrégalo al PATH:
 
-Respuesta: Eco: hola
+```bash
+# Verificar instalación
+cmake --version
 
+# Agregar a PATH si es necesario
+setx PATH "%PATH%;C:\Program Files\CMake\bin"
+```
 
-6️⃣ Para cerrar la conexión, escribir:
+### Error: "mingw32-make not found" (Windows)
 
-salir
+Instala MinGW-w64 y verifica que esté en el PATH:
 
-🔗 4️⃣ Cómo crear su propio cliente (C real del juego)
+```bash
+# Verificar GCC
+gcc --version
 
-José Pablo y Daniel pueden partir del cliente_prueba.c y extenderlo:
+# Verificar make
+mingw32-make --version
+```
 
-🎮 En su cliente deberán implementar:
+### Cliente no conecta al servidor
 
-Conexión automática al servidor Java (127.0.0.1:5000 o IP de red)
+1. Verifica que el servidor esté corriendo (`./gradlew run`)
+2. Verifica el puerto en `constants.h` del cliente
+3. Verifica firewall/antivirus no bloquee el puerto 5555
 
-Envío periódico de datos (posición del jugador, acciones, colisiones)
+---
 
-Recepción de eventos del servidor (movimiento de enemigos, frutas, puntaje)
+## 📝 Licencia
 
-Interfaz visual o textual para representar el estado del juego
+Copyright © 2025 TEC - DonCEyKongJr Team
 
-Sistema de entrada de teclado para controlar al jugador
+Proyecto académico desarrollado para el Tecnológico de Costa Rica.
 
-🧠 5️⃣ Cómo probar la conexión en grupo
-Participante	Rol	Qué hace
-Adrián	Backend (Java)	Corre el servidor (gradle run)
-José Pablo	Cliente en C	Conecta al servidor y envía datos
-Daniel	Cliente en C	Prueba la comunicación y lógica de juego
+---
 
-💡 Si están en la misma red:
+## 👥 Contribuciones
 
-Usar la IP de la máquina donde corre el servidor
-(reemplazar "127.0.0.1" por la IP local del servidor)
+Este es un proyecto académico. Para contribuir:
 
-Asegurarse de que el puerto 5000 esté abierto en el firewall
+1. Fork el repositorio
+2. Crea una rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agrega nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
 
-🧩 6️⃣ Verificación de funcionamiento
+---
 
-Servidor (Java):
+## 📞 Soporte
 
-🚀 Iniciando servidor DonCEy Kong Jr...
-Servidor iniciado en el puerto 5000
-✅ Cliente conectado desde /127.0.0.1
-📩 Cliente dice: hola
-📤 Respondiendo: Eco: hola
+Para preguntas o problemas:
 
+- **Issues**: [GitHub Issues](https://github.com/2005Adrian/DonCEyKongJr/issues)
+- **Documentación adicional**: Ver [VERSIONES.md](VERSIONES.md) e [INSTRUCCIONES_SIMPLES.md](INSTRUCCIONES_SIMPLES.md)
 
-Cliente (C):
+---
 
-Conectado al servidor DonCEy Kong Jr en 127.0.0.1:5000
-Servidor: Conectado al servidor DonCEy Kong Jr!
-Mensaje > hola
-Respuesta: Eco: hola
+<div align="center">
 
-🧱 7️⃣ Posibles errores comunes
-Problema	Causa	Solución
-Address already in use: bind	El servidor anterior sigue ejecutándose	Cerrar el proceso Java o reiniciar el puerto
-Connection refused	El servidor no está corriendo	Ejecutar gradle run antes del cliente
-Cliente no recibe respuesta	Falta de \n al final del mensaje	Asegurarse de tener strcat(buffer, "\n");
-Símbolos raros (Ôéà)	Codificación UTF-8 con emojis	Quitar emojis o cambiar fuente en PowerShell
-✅ En resumen
-Componente	Lenguaje	Estado	Responsable
-Servidor (backend del juego)	Java	✅ Listo y probado	Adrián
-Cliente de prueba (socket base)	C	✅ Funcional	Adrián
-Cliente real (interfaz del jugador)	C	🔜 Por desarrollar	José Pablo & Daniel
+**Hecho con ❤️ para el curso de Datos II - TEC**
+
+[Reportar Bug](https://github.com/2005Adrian/DonCEyKongJr/issues) •
+[Solicitar Feature](https://github.com/2005Adrian/DonCEyKongJr/issues)
+
+</div>

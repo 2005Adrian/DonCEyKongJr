@@ -1,8 +1,48 @@
+# ========================================
+# BUILD OUTPUTS
+# ========================================
+
 # Gradle
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
+
+# CMake
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+
+# Native build outputs
+native/build/
+native/out/
+cliente-c/build/
+cliente-c/out/
+
+# jlink custom runtime
+runtime/
+jre/
+custom-jre/
+
+# jpackage installers
+instaladores/
+dist/
+*.msi
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.AppImage
+
+# ========================================
+# IDE CONFIGURATIONS
+# ========================================
 
 # IntelliJ IDEA
 .idea/
@@ -27,53 +67,97 @@ bin/
 # NetBeans
 nbproject/
 nbbuild/
-dist/
 nbdist/
 
-# Sistema operativo
+# ========================================
+# OPERATING SYSTEM
+# ========================================
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+
+# Windows
 ehthumbs.db
 Thumbs.db
 desktop.ini
+*.lnk
 
-# Compilados C
+# Linux
+*~
+.directory
+
+# ========================================
+# COMPILED & NATIVE CODE
+# ========================================
+
+# All executables and binaries (NO EXCEPTIONS)
 *.exe
-!cliente-c/src/cliente_prueba.exe
-*.o
 *.out
+*.app
+*.com
+
+# C/C++ compiled objects
+*.o
 *.obj
 *.so
 *.dylib
 *.dll
+*.a
+*.lib
 
-# Logs
-*.log
+# ========================================
+# JAVA
+# ========================================
 
-# Java
+# Compiled classes
 *.class
+
+# Crash logs
 hs_err_pid*
 replay_pid*
 
-# Temporales
+# JVM dumps
+*.hprof
+
+# ========================================
+# LOGS & TEMPORARY FILES
+# ========================================
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
 *.tmp
 *.temp
 *.swp
 *.swo
 *~
+*.bak
+*.cache
 
-# Scripts de limpieza (ya ejecutados)
+# Debug outputs
+err.txt
+out.txt
+debug.txt
+*.debug
+
+# ========================================
+# SCRIPTS & LEGACY
+# ========================================
+
+# Cleanup scripts (already executed)
 copiar-archivos.ps1
 limpiar-proyecto-ejecutado.ps1
 limpiar-proyecto.ps1
 
-# Archivos temporales de compilación
-cliente-c/src/cliente_temp.c
-cliente-c/src/cliente_red.exe
-
-# Archivos de debug y temporales
-cliente-c/src/err.txt
-cliente-c/src/out.txt
+# Old batch scripts (replaced by Gradle tasks)
+INICIAR.bat
+REINICIAR-JUEGO.bat
+iniciar-*.bat
+debug-*.bat
