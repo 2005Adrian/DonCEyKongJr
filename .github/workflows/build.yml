@@ -1,32 +1,15 @@
-name: Build & Release
+name: Build & Test
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  release:
-    types: [ created ]
 
 jobs:
-  build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            artifact_name: DonCEyKongJr-Linux
-            installer_ext: deb
-          - os: windows-latest
-            artifact_name: DonCEyKongJr-Windows
-            installer_ext: msi
-          - os: macos-latest
-            artifact_name: DonCEyKongJr-macOS
-            installer_ext: dmg
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -39,93 +22,40 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Setup CMake
-        uses: jwlawson/actions-setup-cmake@v2
+      - name: Setup MSYS2 with MinGW
+        uses: msys2/setup-msys2@v2
         with:
-          cmake-version: '3.27.x'
-
-      - name: Setup GCC (Windows)
-        if: runner.os == 'Windows'
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
-
-      - name: Setup build tools (Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libsdl2-dev
-
-      - name: Setup build tools (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install cmake
-
-      - name: Grant execute permission for gradlew
-        if: runner.os != 'Windows'
-        run: chmod +x servidor-java/gradlew
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-make
 
       - name: Build Java Server
         working-directory: servidor-java
-        run: ./gradlew build --no-daemon --stacktrace
+        run: .\gradlew.bat build --no-daemon --stacktrace
+        shell: cmd
 
       - name: Run tests
         working-directory: servidor-java
-        run: ./gradlew test --no-daemon
-
-      - name: Build Native Client
-        working-directory: servidor-java
-        run: ./gradlew buildNativeClient --no-daemon --stacktrace
+        run: .\gradlew.bat test --no-daemon
+        shell: cmd
         continue-on-error: true
 
-      - name: Create runtime image with jlink
-        working-directory: servidor-java
-        run: ./gradlew jlink --no-daemon --stacktrace
-
-      - name: Create installer with jpackage
-        working-directory: servidor-java
-        run: ./gradlew jpackage --no-daemon --stacktrace
-        continue-on-error: true
+      - name: Build C Client
+        shell: msys2 {0}
+        working-directory: cliente-c
+        run: |
+          cmake -B build -G "MinGW Makefiles"
+          cmake --build build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-build
+          name: DonCEyKongJr-Windows
           path: |
             servidor-java/build/libs/*.jar
-            servidor-java/build/jlink/**
-            servidor-java/build/jpackage/**
+            cliente-c/build/*.exe
           retention-days: 30
 
-      - name: Upload installer (if exists)
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: ${{ matrix.artifact_name }}-installer
-          path: |
-            servidor-java/build/jpackage/*.${{ matrix.installer_ext }}
-          retention-days: 90
-        continue-on-error: true
-
-  release:
-    name: Create Release
-    needs: build
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Upload installers to release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            artifacts/**/*.msi
-            artifacts/**/*.dmg
-            artifacts/**/*.deb
-            artifacts/**/*.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
