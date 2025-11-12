@@ -30,7 +30,7 @@ public class Config {
     public static final int POSICION_OBJETIVO_Y = 0;
     
     /** Vidas iniciales de cada jugador */
-    public static final int VIDAS_INICIALES = 3;
+    public static final int VIDAS_INICIALES = 999999;
     
     /** Puntos base por fruta */
     public static final int PUNTOS_FRUTA_BASE = 50;

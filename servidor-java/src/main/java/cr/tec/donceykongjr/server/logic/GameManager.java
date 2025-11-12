@@ -183,16 +183,8 @@ public class GameManager extends Subject {
      * Verifica si algún jugador alcanzó el objetivo.
      */
     private void verificarObjetivos() {
-        for (Jugador jugador : jugadores.values()) {
-            if (jugador.isActivo() && jugador.haAlcanzadoObjetivo()) {
-                nivelUp();
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("playerId", jugador.getId());
-                payload.put("level", nivel);
-                EventoJuego evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_WIN, payload);
-                notificarObservadores(evento);
-            }
-        }
+        // Nivel infinito - no se verifica objetivo ni se sube de nivel
+        // Los jugadores simplemente continúan jugando
     }
     
     /**
