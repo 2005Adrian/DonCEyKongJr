@@ -63,9 +63,6 @@ public class ConsolaAdmin implements Runnable {
                     case "list":
                         manejarList(partes);
                         break;
-                    case "level":
-                        manejarLevel(partes);
-                        break;
                     case "pause":
                         gameManager.setPausado(true);
                         System.out.println("juego pausado");
@@ -108,7 +105,6 @@ public class ConsolaAdmin implements Runnable {
         System.out.println("  fruit add <liana> <y> <points> - agrega una fruta");
         System.out.println("  fruit del <liana> <y>      - elimina una fruta");
         System.out.println("  list entities              - lista todas las entidades");
-        System.out.println("  level up                   - sube el nivel");
         System.out.println("  pause                     - pausa el juego");
         System.out.println("  resume                    - reanuda el juego");
         System.out.println("  help                      - muestra esta ayuda");
@@ -129,18 +125,26 @@ public class ConsolaAdmin implements Runnable {
         try {
             int liana = Integer.parseInt(partes[2]);
             double y = Double.parseDouble(partes[3]);
-            
+
             if (tipo.equals("red")) {
-                gameManager.agregarCocodriloRojo(liana, y);
-                System.out.println("[ok] cocodrilo rojo creado en liana " + liana + ", y=" + y);
+                String error = gameManager.agregarCocodriloRojo(liana, y);
+                if (error != null) {
+                    System.out.println("[error] " + error);
+                } else {
+                    System.out.println("[ok] cocodrilo rojo creado en liana " + liana + ", y=" + y);
+                }
             } else if (tipo.equals("blue")) {
-                gameManager.agregarCocodriloAzul(liana, y);
-                System.out.println("[ok] cocodrilo azul creado en liana " + liana + ", y=" + y);
+                String error = gameManager.agregarCocodriloAzul(liana, y);
+                if (error != null) {
+                    System.out.println("[error] " + error);
+                } else {
+                    System.out.println("[ok] cocodrilo azul creado en liana " + liana + ", y=" + y);
+                }
             } else {
-                System.out.println("tipo de cocodrilo invalido. use 'red' o 'blue'");
+                System.out.println("[error] tipo de cocodrilo invalido. use 'red' o 'blue'");
             }
         } catch (NumberFormatException e) {
-            System.out.println("error: liana y y deben ser numeros");
+            System.out.println("[error] liana y y deben ser numeros");
         }
     }
     
@@ -164,12 +168,15 @@ public class ConsolaAdmin implements Runnable {
                 int liana = Integer.parseInt(partes[2]);
                 double y = Double.parseDouble(partes[3]);
                 int puntos = Integer.parseInt(partes[4]);
-                
-                if (gameManager.agregarFruta(liana, y, puntos)) {
+
+                String error = gameManager.agregarFruta(liana, y, puntos);
+                if (error != null) {
+                    System.out.println("[error] " + error);
+                } else {
                     System.out.println("[ok] fruta agregada en liana " + liana + ", y=" + y + ", puntos=" + puntos);
                 }
             } catch (NumberFormatException e) {
-                System.out.println("error: liana, y y points deben ser numeros");
+                System.out.println("[error] liana, y y points deben ser numeros");
             }
         } else if (accion.equals("del")) {
             if (partes.length < 4) {
@@ -207,24 +214,6 @@ public class ConsolaAdmin implements Runnable {
             System.out.println(gameManager.listarEntidades());
         } else {
             System.out.println("tipo de listado invalido. use 'entities'");
-        }
-    }
-    
-    /**
-     * Maneja comandos de nivel.
-     */
-    private void manejarLevel(String[] partes) {
-        if (partes.length < 2) {
-            System.out.println("uso: level up");
-            return;
-        }
-        
-        String accion = partes[1].toLowerCase();
-        if (accion.equals("up")) {
-            gameManager.nivelUp();
-            System.out.println("[ok] nivel subido a " + gameManager.getNivel());
-        } else {
-            System.out.println("accion invalida. use 'up'");
         }
     }
     

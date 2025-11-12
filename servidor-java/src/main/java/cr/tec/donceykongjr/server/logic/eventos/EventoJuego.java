@@ -9,7 +9,6 @@ public class EventoJuego {
         FRUIT_TAKEN,      // Fruta recogida
         PLAYER_HIT,       // Jugador golpeado por cocodrilo
         PLAYER_ELIMINATED, // Jugador eliminado
-        LEVEL_UP,         // Subida de nivel
         PLAYER_WIN        // Jugador alcanzó el objetivo
     }
     

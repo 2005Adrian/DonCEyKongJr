@@ -107,13 +107,6 @@ public class Jugador extends Entidad {
         return true;
     }
     
-    /**
-     * Verifica si el jugador ha alcanzado el objetivo (parte superior).
-     */
-    public boolean haAlcanzadoObjetivo() {
-        return y <= Config.POSICION_OBJETIVO_Y && activo;
-    }
-    
     // Getters y Setters
     public int getVidas() {
         return vidas;

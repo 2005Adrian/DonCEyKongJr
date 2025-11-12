@@ -22,13 +22,7 @@ public class Config {
     
     /** Velocidad base de movimiento de entidades */
     public static final double VELOCIDAD_BASE = 1.0;
-    
-    /** Velocidad de incremento por nivel */
-    public static final double MULTIPLICADOR_VELOCIDAD_NIVEL = 0.3;
-    
-    /** Posición objetivo (altura máxima) para completar nivel */
-    public static final int POSICION_OBJETIVO_Y = 0;
-    
+
     /** Vidas iniciales de cada jugador */
     public static final int VIDAS_INICIALES = 999999;
     

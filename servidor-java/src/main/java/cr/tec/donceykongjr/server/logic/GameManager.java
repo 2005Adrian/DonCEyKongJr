@@ -20,11 +20,13 @@ public class GameManager extends Subject {
     private List<Cocodrilo> cocodrilos;
     private List<Fruta> frutas;
     private List<Liana> lianas;
-    private int nivel;
     private double velocidadMultiplicador;
     private boolean pausado;
     private long tickActual;
-    
+
+    // Motor de cocodrilos independiente
+    private MotorCocodrilos motorCocodrilos;
+
     /**
      * Constructor del GameManager.
      */
@@ -33,22 +35,32 @@ public class GameManager extends Subject {
         this.cocodrilos = new ArrayList<>();
         this.frutas = new ArrayList<>();
         this.lianas = new ArrayList<>();
-        this.nivel = 1;
         this.velocidadMultiplicador = Config.VELOCIDAD_BASE;
         this.pausado = false;
         this.tickActual = 0;
+
+        // Crear motor de cocodrilos con dt=0.1s (10 TPS)
+        this.motorCocodrilos = new MotorCocodrilos(0.1);
+
         inicializarLianas();
         inicializarEntidades();
+
+        // Iniciar motor de cocodrilos
+        motorCocodrilos.start();
+        LoggerUtil.info("Motor de cocodrilos iniciado");
     }
     
     /**
      * Inicializa las lianas del juego.
      */
     private void inicializarLianas() {
-        // Crear 5 lianas verticales
+        // Crear 5 lianas verticales con límites explícitos
         for (int i = 0; i < 5; i++) {
-            Liana liana = new Liana("L_" + i, 0, 0, i, 10);
+            Liana liana = new Liana("L_" + i, 0, 0, i, 0.0, 500.0);
             lianas.add(liana);
+
+            // Registrar liana en el motor de cocodrilos
+            motorCocodrilos.registrarLiana(liana);
         }
     }
 
@@ -56,26 +68,14 @@ public class GameManager extends Subject {
      * Inicializa las entidades del juego (cocodrilos y frutas).
      */
     private void inicializarEntidades() {
-        Random random = new Random();
+        // Crear 2 cocodrilos rojos iniciales usando el motor (velocidad x2)
+        motorCocodrilos.crearCocodriloRojo(0, 150.0, 60.0, -1); // Liana 0, empieza bajando
+        motorCocodrilos.crearCocodriloRojo(2, 300.0, 70.0, 1);  // Liana 2, empieza subiendo
 
-        // Crear cocodrilos iniciales (3-5 cocodrilos en diferentes lianas)
-        int numCocodrilos = 3 + random.nextInt(3);
-        for (int i = 0; i < numCocodrilos; i++) {
-            int liana = random.nextInt(4); // Lianas 0-3
-            double y = 100.0 + random.nextDouble() * 300.0; // Y entre 100 y 400
-
-            // Alternar entre rojos y azules
-            Cocodrilo cocodrilo;
-            if (i % 2 == 0) {
-                cocodrilo = new CocodriloRojo("CROC_R_" + i, 0, 0, liana, y);
-            } else {
-                cocodrilo = new CocodriloAzul("CROC_B_" + i, 0, 0, liana, y);
-            }
-            cocodrilos.add(cocodrilo);
-            LoggerUtil.info("cocodrilo " + cocodrilo.getTipo() + " creado en liana " + liana + ", y=" + String.format("%.2f", y));
-        }
+        LoggerUtil.info("2 cocodrilos rojos creados en el motor");
 
         // Crear frutas iniciales (2-4 frutas en diferentes lianas)
+        Random random = new Random();
         int numFrutas = 2 + random.nextInt(3);
         for (int i = 0; i < numFrutas; i++) {
             int liana = random.nextInt(4); // Lianas 0-3
@@ -87,7 +87,7 @@ public class GameManager extends Subject {
             LoggerUtil.info("fruta creada en liana " + liana + ", y=" + String.format("%.2f", y) + ", puntos=" + puntos);
         }
 
-        LoggerUtil.info("inicialización completada: " + numCocodrilos + " cocodrilos, " + numFrutas + " frutas");
+        LoggerUtil.info("inicialización completada: 2 cocodrilos rojos, " + numFrutas + " frutas");
     }
 
     /**
@@ -95,30 +95,55 @@ public class GameManager extends Subject {
      */
     public void actualizar(double deltaTime) {
         if (pausado) return;
-        
+
         tickActual++;
-        
-        // Actualizar cocodrilos
-        cocodrilos.removeIf(c -> !c.isActivo());
-        for (Cocodrilo cocodrilo : cocodrilos) {
-            cocodrilo.actualizar(deltaTime * velocidadMultiplicador);
-        }
-        
+
+        // Sincronizar cocodrilos del motor a la lista local (para colisiones)
+        sincronizarCocodrilosDesdeMotor();
+
         // Actualizar jugadores
         for (Jugador jugador : jugadores.values()) {
             if (jugador.isActivo()) {
                 jugador.actualizar(deltaTime);
             }
         }
-        
+
         // Detectar colisiones jugador-cocodrilo
         detectarColisionesJugadorCocodrilo();
-        
+
         // Detectar recogida de frutas
         detectarRecogidaFrutas();
-        
+
         // Verificar objetivos
         verificarObjetivos();
+
+        // Notificar a los clientes sobre el estado actualizado
+        notificarObservadores();
+    }
+
+    /**
+     * Sincroniza los cocodrilos del motor con la lista local para detección de colisiones.
+     */
+    private void sincronizarCocodrilosDesdeMotor() {
+        // Obtener snapshot del motor
+        SnapshotSistemaCocodrilos snapshot = motorCocodrilos.getSnapshot();
+
+        // Limpiar lista actual
+        cocodrilos.clear();
+
+        // Convertir snapshots a instancias de Cocodrilo para colisiones
+        for (SnapshotCocodrilo snap : snapshot.getCocodrilos()) {
+            if (snap.isActivo()) {
+                // Crear instancia temporal para detección de colisiones
+                Cocodrilo temp;
+                if (snap.getTipo() == Cocodrilo.TipoCocodrilo.ROJO) {
+                    temp = new CocodriloRojo(snap.getId(), 0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
+                } else {
+                    temp = new CocodriloAzul(snap.getId(), 0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
+                }
+                cocodrilos.add(temp);
+            }
+        }
     }
     
     /**
@@ -183,24 +208,23 @@ public class GameManager extends Subject {
      * Verifica si algún jugador alcanzó el objetivo.
      */
     private void verificarObjetivos() {
-        // Nivel infinito - no se verifica objetivo ni se sube de nivel
+        // Juego continuo sin niveles
         // Los jugadores simplemente continúan jugando
     }
-    
+
     /**
-     * Aumenta el nivel y la velocidad del juego.
+     * Reinicia el juego aumentando solo la velocidad de los cocodrilos.
+     * Se invoca cuando Donkey Kong Jr. rescata a Donkey Kong.
      */
-    public void nivelUp() {
-        nivel++;
-        velocidadMultiplicador += Config.MULTIPLICADOR_VELOCIDAD_NIVEL;
-        
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("level", nivel);
-        payload.put("speedMultiplier", velocidadMultiplicador);
-        EventoJuego evento = new EventoJuego(EventoJuego.TipoEvento.LEVEL_UP, payload);
-        notificarObservadores(evento);
-        
-        LoggerUtil.info("nivel subido a " + nivel + ". velocidad: " + velocidadMultiplicador);
+    public void reiniciar() {
+        // Incrementar dificultad del motor de cocodrilos (aumenta velocidad)
+        motorCocodrilos.incrementarDificultad(1.2); // +20% de velocidad en cocodrilos
+
+        LoggerUtil.info("Juego reiniciado. Nueva velocidad cocodrilos: x" +
+                       String.format("%.2f", motorCocodrilos.getFactorDificultad()));
+
+        // Notificar a los clientes
+        notificarObservadores();
     }
     
     /**
@@ -272,34 +296,119 @@ public class GameManager extends Subject {
     }
     
     /**
-     * Agrega un cocodrilo rojo.
+     * Agrega un cocodrilo rojo usando el motor.
+     * @return null si se creó exitosamente, mensaje de error si falló
      */
-    public void agregarCocodriloRojo(int liana, double y) {
-        Cocodrilo cocodrilo = FactoryEntidad.crearCocodriloRojo(liana, y, velocidadMultiplicador);
-        cocodrilos.add(cocodrilo);
-        LoggerUtil.info("cocodrilo rojo creado en liana " + liana + ", y=" + y);
-        notificarObservadores();
+    public String agregarCocodriloRojo(int liana, double y) {
+        // Validar liana
+        if (liana < 0 || liana >= lianas.size()) {
+            String error = "Liana inválida. Debe ser entre 0 y " + (lianas.size() - 1);
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Validar posición Y
+        Liana lianaObj = lianas.get(liana);
+        if (y < lianaObj.getAlturaMin() || y > lianaObj.getAlturaMax()) {
+            String error = String.format("Posición Y inválida. Debe estar entre %.1f y %.1f",
+                lianaObj.getAlturaMin(), lianaObj.getAlturaMax());
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Crear cocodrilo rojo usando el motor (dirección aleatoria, velocidad x2)
+        int direccion = (Math.random() < 0.5) ? -1 : 1;
+        String id = motorCocodrilos.crearCocodriloRojo(liana, y, 60.0, direccion);
+
+        if (id != null) {
+            LoggerUtil.info("cocodrilo rojo creado en motor: liana=" + liana + ", y=" + y + ", id=" + id);
+            notificarObservadores();
+            return null; // Éxito
+        } else {
+            String error = "No se pudo crear el cocodrilo en el motor";
+            LoggerUtil.warning(error);
+            return error;
+        }
     }
-    
+
     /**
-     * Agrega un cocodrilo azul.
+     * Agrega un cocodrilo azul usando el motor.
+     * @return null si se creó exitosamente, mensaje de error si falló
      */
-    public void agregarCocodriloAzul(int liana, double y) {
-        Cocodrilo cocodrilo = FactoryEntidad.crearCocodriloAzul(liana, y, velocidadMultiplicador);
-        cocodrilos.add(cocodrilo);
-        LoggerUtil.info("cocodrilo azul creado en liana " + liana + ", y=" + y);
-        notificarObservadores();
+    public String agregarCocodriloAzul(int liana, double y) {
+        // Validar liana
+        if (liana < 0 || liana >= lianas.size()) {
+            String error = "Liana inválida. Debe ser entre 0 y " + (lianas.size() - 1);
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Validar posición Y
+        Liana lianaObj = lianas.get(liana);
+        if (y < lianaObj.getAlturaMin() || y > lianaObj.getAlturaMax()) {
+            String error = String.format("Posición Y inválida. Debe estar entre %.1f y %.1f",
+                lianaObj.getAlturaMin(), lianaObj.getAlturaMax());
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Crear cocodrilo azul usando el motor (velocidad x2)
+        String id = motorCocodrilos.crearCocodriloAzul(liana, y, 50.0);
+
+        if (id != null) {
+            LoggerUtil.info("cocodrilo azul creado en motor: liana=" + liana + ", y=" + y + ", id=" + id);
+            notificarObservadores();
+            return null; // Éxito
+        } else {
+            String error = "No se pudo crear el cocodrilo en el motor";
+            LoggerUtil.warning(error);
+            return error;
+        }
     }
     
     /**
      * Agrega una fruta.
+     * @return null si se creó exitosamente, mensaje de error si falló
      */
-    public boolean agregarFruta(int liana, double y, int puntos) {
+    public String agregarFruta(int liana, double y, int puntos) {
+        // Validar liana
+        if (liana < 0 || liana >= lianas.size()) {
+            String error = "Liana inválida. Debe ser entre 0 y " + (lianas.size() - 1);
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Validar posición Y
+        Liana lianaObj = lianas.get(liana);
+        if (y < lianaObj.getAlturaMin() || y > lianaObj.getAlturaMax()) {
+            String error = String.format("Posición Y inválida. Debe estar entre %.1f y %.1f",
+                lianaObj.getAlturaMin(), lianaObj.getAlturaMax());
+            LoggerUtil.warning(error);
+            return error;
+        }
+
+        // Validar que no haya fruta duplicada en la misma posición
+        for (Fruta f : frutas) {
+            if (f.getLiana() == liana && Math.abs(f.getY() - y) < 10.0) {
+                String error = String.format("Ya existe una fruta en esa posición (liana=%d, y=%.1f). " +
+                    "Las frutas deben estar separadas por al menos 10 unidades.", liana, f.getY());
+                LoggerUtil.warning(error);
+                return error;
+            }
+        }
+
+        // Validar puntos
+        if (puntos <= 0) {
+            String error = "Los puntos deben ser mayores a 0";
+            LoggerUtil.warning(error);
+            return error;
+        }
+
         Fruta fruta = FactoryEntidad.crearFruta(liana, y, puntos);
         frutas.add(fruta);
         LoggerUtil.info("fruta creada en liana " + liana + ", y=" + y + ", puntos=" + puntos);
         notificarObservadores();
-        return true;
+        return null; // Éxito
     }
     
     /**
@@ -325,10 +434,9 @@ public class GameManager extends Subject {
     public Map<String, Object> getEstadoJuego() {
         Map<String, Object> estado = new HashMap<>();
         estado.put("tick", tickActual);
-        estado.put("level", nivel);
         estado.put("speedMultiplier", velocidadMultiplicador);
         estado.put("paused", pausado);
-        
+
         // Jugadores
         List<Map<String, Object>> jugadoresData = new ArrayList<>();
         for (Jugador jugador : jugadores.values()) {
@@ -343,21 +451,22 @@ public class GameManager extends Subject {
             jugadoresData.add(j);
         }
         estado.put("players", jugadoresData);
-        
-        // Cocodrilos
+
+        // Cocodrilos - obtener del motor
         List<Map<String, Object>> cocodrilosData = new ArrayList<>();
-        for (Cocodrilo cocodrilo : cocodrilos) {
-            if (cocodrilo.isActivo()) {
+        SnapshotSistemaCocodrilos snapshot = motorCocodrilos.getSnapshot();
+        for (SnapshotCocodrilo croc : snapshot.getCocodrilos()) {
+            if (croc.isActivo()) {
                 Map<String, Object> c = new HashMap<>();
-                c.put("id", cocodrilo.getId());
-                c.put("kind", cocodrilo.getTipo().toString());
-                c.put("liana", cocodrilo.getLiana());
-                c.put("y", cocodrilo.getY());
+                c.put("id", croc.getId());
+                c.put("kind", croc.getTipo().toString());
+                c.put("liana", croc.getLianaId());
+                c.put("y", croc.getY());
                 cocodrilosData.add(c);
             }
         }
         estado.put("crocodiles", cocodrilosData);
-        
+
         // Frutas
         List<Map<String, Object>> frutasData = new ArrayList<>();
         for (Fruta fruta : frutas) {
@@ -371,8 +480,18 @@ public class GameManager extends Subject {
             }
         }
         estado.put("fruits", frutasData);
-        
+
         return estado;
+    }
+
+    /**
+     * Detiene el motor de cocodrilos y limpia recursos.
+     */
+    public void shutdown() {
+        if (motorCocodrilos != null) {
+            motorCocodrilos.stop();
+            LoggerUtil.info("Motor de cocodrilos detenido");
+        }
     }
     
     /**
@@ -388,12 +507,19 @@ public class GameManager extends Subject {
               .append(", vidas=").append(j.getVidas())
               .append(", puntos=").append(j.getPuntaje()).append(")\n");
         }
-        sb.append("Cocodrilos: ").append(cocodrilos.size()).append("\n");
-        for (Cocodrilo c : cocodrilos) {
-            sb.append("  - ").append(c.getId()).append(" (").append(c.getTipo())
-              .append(", liana=").append(c.getLiana())
-              .append(", y=").append(String.format("%.2f", c.getY())).append(")\n");
+
+        // Obtener cocodrilos del motor
+        SnapshotSistemaCocodrilos snapshot = motorCocodrilos.getSnapshot();
+        sb.append("Cocodrilos: ").append(snapshot.getTotalCocodrilosActivos()).append("\n");
+        for (SnapshotCocodrilo c : snapshot.getCocodrilos()) {
+            if (c.isActivo()) {
+                sb.append("  - ").append(c.getId()).append(" (").append(c.getTipo())
+                  .append(", liana=").append(c.getLianaId())
+                  .append(", y=").append(String.format("%.2f", c.getY()))
+                  .append(", dir=").append(c.getDireccion() > 0 ? "↑" : "↓").append(")\n");
+            }
         }
+
         sb.append("Frutas: ").append(frutas.size()).append("\n");
         for (Fruta f : frutas) {
             sb.append("  - ").append(f.getId()).append(" (liana=").append(f.getLiana())
@@ -407,21 +533,17 @@ public class GameManager extends Subject {
     public boolean isPausado() {
         return pausado;
     }
-    
+
     public void setPausado(boolean pausado) {
         this.pausado = pausado;
         LoggerUtil.info("juego " + (pausado ? "pausado" : "reanudado"));
         notificarObservadores();
     }
-    
-    public int getNivel() {
-        return nivel;
-    }
-    
+
     public double getVelocidadMultiplicador() {
         return velocidadMultiplicador;
     }
-    
+
     public long getTickActual() {
         return tickActual;
     }
