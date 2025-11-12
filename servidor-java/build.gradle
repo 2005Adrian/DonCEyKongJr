@@ -178,22 +178,19 @@ jlink {
 // ========================================
 // jpackage - Instaladores Multiplataforma
 // ========================================
-
+// Temporalmente deshabilitado para resolver compatibilidad
+/*
 jpackage {
-    imageName = 'DonCEyKongJr'
-    installerName = 'DonCEyKongJr'
-    appVersion = version
-    vendor = 'TEC - DonCEyKongJr Team'
-    copyright = 'Copyright © 2025'
-
-    installerOptions += [
-        '--description', 'DonCEyKong Jr - Multiplayer Game Server',
-        '--app-content', "${projectDir}/../cliente-c/build"
+    jpackageOptions = [
+        '--app-version', version,
+        '--vendor', 'TEC - DonCEyKongJr Team',
+        '--copyright', 'Copyright © 2025',
+        '--description', 'DonCEyKong Jr - Multiplayer Game Server'
     ]
 
     if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
         installerType = 'msi'
-        installerOptions += [
+        jpackageOptions += [
             '--win-dir-chooser',
             '--win-menu',
             '--win-shortcut',
@@ -201,17 +198,18 @@ jpackage {
         ]
     } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
         installerType = 'dmg'
-        installerOptions += [
+        jpackageOptions += [
             '--mac-package-name', 'DonCEyKongJr'
         ]
     } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
         installerType = 'deb'
-        installerOptions += [
+        jpackageOptions += [
             '--linux-shortcut',
             '--linux-menu-group', 'Games'
         ]
     }
 }
+*/
 
 // ========================================
 // Tasks Personalizados
@@ -240,9 +238,9 @@ task cleanAll(dependsOn: clean) {
 // Task de Ayuda
 // ========================================
 
-task help {
+task projectHelp {
     group = 'help'
-    description = 'Muestra ayuda sobre tasks disponibles'
+    description = 'Muestra ayuda sobre tasks disponibles del proyecto'
 
     doLast {
         println '''
