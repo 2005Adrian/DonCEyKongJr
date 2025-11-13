@@ -55,43 +55,75 @@ public class GameManager extends Subject {
     }
     
     /**
-     * Inicializa las lianas del juego.
+     * Inicializa las lianas del juego con rangos de altura específicos.
+     * Diseño de 8 columnas según el mapa del nivel:
+     * - Columna 0: Liana completa desde arriba hasta abajo
+     * - Columna 1: Liana completa con isla de tierra abajo
+     * - Columna 2: Lianas por secciones (media altura hacia abajo)
+     * - Columna 3: Liana hasta mitad del mapa
+     * - Columna 4: Liana corta en la parte inferior
+     * - Columna 5: Liana larga completa
+     * - Columna 6: Liana normal/media
+     * - Columna 7: Liana de victoria (parte superior)
      */
     private void inicializarLianas() {
-        // Crear 5 lianas verticales con límites explícitos
-        for (int i = 0; i < 5; i++) {
-            Liana liana = new Liana("L_" + i, 0, 0, i, 0.0, 500.0);
-            lianas.add(liana);
+        // Columna 0: Liana completa (0-500)
+        lianas.add(new Liana("L_0", 0, 0, 0, 0.0, 500.0));
 
-            // Registrar liana en el motor de cocodrilos
+        // Columna 1: Liana completa (0-500)
+        lianas.add(new Liana("L_1", 0, 0, 1, 0.0, 500.0));
+
+        // Columna 2: Liana desde media altura (250-500)
+        lianas.add(new Liana("L_2", 0, 0, 2, 250.0, 500.0));
+
+        // Columna 3: Liana hasta mitad (0-250)
+        lianas.add(new Liana("L_3", 0, 0, 3, 0.0, 250.0));
+
+        // Columna 4: Liana corta en parte inferior (350-500)
+        lianas.add(new Liana("L_4", 0, 0, 4, 350.0, 500.0));
+
+        // Columna 5: Liana larga completa (0-500)
+        lianas.add(new Liana("L_5", 0, 0, 5, 0.0, 500.0));
+
+        // Columna 6: Liana media (150-500)
+        lianas.add(new Liana("L_6", 0, 0, 6, 150.0, 500.0));
+
+        // Columna 7: Liana de victoria - parte superior (0-100)
+        lianas.add(new Liana("L_7", 0, 0, 7, 0.0, 100.0));
+
+        // Registrar todas las lianas en el motor de cocodrilos
+        for (Liana liana : lianas) {
             motorCocodrilos.registrarLiana(liana);
         }
+
+        LoggerUtil.info("8 lianas inicializadas con rangos de altura específicos");
     }
 
     /**
      * Inicializa las entidades del juego (cocodrilos y frutas).
      */
     private void inicializarEntidades() {
-        // Crear 2 cocodrilos rojos iniciales usando el motor (velocidad x2)
-        motorCocodrilos.crearCocodriloRojo(0, 150.0, 60.0, -1); // Liana 0, empieza bajando
-        motorCocodrilos.crearCocodriloRojo(2, 300.0, 70.0, 1);  // Liana 2, empieza subiendo
+        // Crear cocodrilos rojos iniciales en lianas válidas
+        motorCocodrilos.crearCocodriloRojo(0, 150.0, 60.0, -1); // Liana 0 completa
+        motorCocodrilos.crearCocodriloRojo(1, 300.0, 70.0, 1);  // Liana 1 completa
+        motorCocodrilos.crearCocodriloRojo(5, 200.0, 60.0, -1); // Liana 5 completa
 
-        LoggerUtil.info("2 cocodrilos rojos creados en el motor");
+        LoggerUtil.info("3 cocodrilos rojos creados en el motor");
 
-        // Crear frutas iniciales (2-4 frutas en diferentes lianas)
-        Random random = new Random();
-        int numFrutas = 2 + random.nextInt(3);
-        for (int i = 0; i < numFrutas; i++) {
-            int liana = random.nextInt(Math.max(1, lianas.size()));
-            double y = 150.0 + random.nextDouble() * 250.0; // Y entre 150 y 400
-            int puntos = 10; // Puntos base
+        // Crear frutas iniciales en diferentes lianas y alturas válidas
+        // Fruta en liana 0 (completa 0-500)
+        frutas.add(new Fruta("FRUTA_0", 0.0, 250.0, 0, 50));
 
-            Fruta fruta = new Fruta("FRUTA_" + i, 0.0, y, liana, puntos);
-            frutas.add(fruta);
-            LoggerUtil.info("fruta creada en liana " + liana + ", y=" + String.format("%.2f", y) + ", puntos=" + puntos);
-        }
+        // Fruta en liana 1 (completa 0-500)
+        frutas.add(new Fruta("FRUTA_1", 0.0, 350.0, 1, 50));
 
-        LoggerUtil.info("inicialización completada: 2 cocodrilos rojos, " + numFrutas + " frutas");
+        // Fruta en liana 2 (250-500)
+        frutas.add(new Fruta("FRUTA_2", 0.0, 400.0, 2, 50));
+
+        // Fruta en liana 5 (completa 0-500)
+        frutas.add(new Fruta("FRUTA_3", 0.0, 200.0, 5, 50));
+
+        LoggerUtil.info("inicialización completada: 3 cocodrilos rojos, 4 frutas en lianas válidas");
     }
 
     /**

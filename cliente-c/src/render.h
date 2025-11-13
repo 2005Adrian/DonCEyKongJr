@@ -20,7 +20,8 @@ void DibujarEfectos(HDC hdc);
 // Funciones de dibujo de elementos del escenario
 void DibujarPlataformas(HDC hdc);
 void DibujarLianas(HDC hdc);
-void DibujarAbismo(HDC hdc);
+void DibujarLianaSegmento(HDC hdc, int x, int yInicio, int yFin, COLORREF colorOscuro, COLORREF colorClaro);
+void DibujarAgua(HDC hdc);
 void DibujarDonkeyKong(HDC hdc);
 
 // Funciones de dibujo de entidades

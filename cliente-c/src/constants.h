@@ -7,7 +7,7 @@
 #define BUFFER_SIZE 8192
 
 // Constantes del juego
-#define MAX_LIANAS 5
+#define MAX_LIANAS 8
 #define MAX_COCODRILOS 50
 #define MAX_FRUTAS 20
 #define MAX_JUGADORES 4

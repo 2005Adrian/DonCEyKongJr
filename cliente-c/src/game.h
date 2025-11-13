@@ -54,8 +54,9 @@ extern HANDLE g_threadRed;
 
 // Posiciones fijas del escenario
 extern int g_lianasPosX[MAX_LIANAS];
-extern int g_plataformasPosY[4];
+extern int g_plataformasPosY[8];
 extern int g_abismoY;
+extern int g_aguaY;
 extern int g_donkeyPosX;
 extern int g_donkeyPosY;
 

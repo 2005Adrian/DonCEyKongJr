@@ -95,13 +95,16 @@ tasks.named('run') {
 // Build del Cliente C con CMake
 // ========================================
 
-task buildNativeClient(type: Exec) {
+def nativeClientDir = file("${projectDir}/../cliente-c")
+def nativeClientBuildDir = file("${nativeClientDir}/build")
+def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+
+tasks.register('configureNativeClient', Exec) {
     group = 'build'
-    description = 'Compila el cliente nativo C usando CMake'
+    description = 'Configura CMake para el cliente nativo C'
 
-    workingDir "${projectDir}/../cliente-c"
+    workingDir nativeClientDir
 
-    def buildDir = "${workingDir}/build"
     def cmakeArgs = [
         'cmake',
         '-S', '.',
@@ -109,39 +112,47 @@ task buildNativeClient(type: Exec) {
         '-DCMAKE_BUILD_TYPE=Release'
     ]
 
-    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+    if (isWindows) {
         cmakeArgs += ['-G', 'MinGW Makefiles']
     }
 
     commandLine cmakeArgs
+}
 
-    doLast {
-        exec {
-            workingDir buildDir
-            if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-                commandLine 'mingw32-make'
-            } else {
-                commandLine 'make'
-            }
-        }
+tasks.register('buildNativeClient', Exec) {
+    group = 'build'
+    description = 'Compila el cliente nativo C usando CMake'
+
+    dependsOn tasks.named('configureNativeClient')
+    workingDir nativeClientBuildDir
+
+    if (isWindows) {
+        commandLine 'mingw32-make'
+    } else {
+        commandLine 'make'
     }
 }
 
-task copyNativeClient(type: Copy, dependsOn: buildNativeClient) {
+tasks.register('copyNativeClient', Copy) {
     group = 'build'
     description = 'Copia el cliente nativo compilado al directorio de recursos'
 
-    from "${projectDir}/../cliente-c/build"
-    include '*.exe', '*.dll', 'DonCEyKongJr-Client*', 'donceykong-client'
+    dependsOn tasks.named('buildNativeClient')
+
+    from(nativeClientBuildDir) {
+        include '*.exe', '*.dll', 'DonCEyKongJr-Client*', 'donceykong-client'
+    }
+
     into "${buildDir}/resources/main/native"
 
-    doLast {
-        // Copiar sprites también
-        copy {
-            from "${projectDir}/../cliente-c/sprites"
-            into "${buildDir}/resources/main/native/sprites"
-        }
+    // Copiar sprites también
+    from("${projectDir}/../cliente-c/sprites") {
+        into 'sprites'
     }
+}
+
+tasks.named('jar') {
+    dependsOn tasks.named('copyNativeClient')
 }
 
 // ========================================

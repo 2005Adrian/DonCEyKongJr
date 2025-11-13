@@ -1,163 +1,24 @@
-# ========================================
-# BUILD OUTPUTS
-# ========================================
-
-# Gradle
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
-
-# CMake
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-*.cmake
-!CMakeLists.txt
-compile_commands.json
-
-# Native build outputs
-native/build/
-native/out/
+# Build directories
 cliente-c/build/
-cliente-c/out/
+servidor-java/build/
+servidor-java/.gradle/
 
-# jlink custom runtime
-runtime/
-jre/
-custom-jre/
-
-# jpackage installers
-instaladores/
-dist/
-*.msi
-*.exe
-*.dmg
-*.pkg
-*.deb
-*.rpm
-*.AppImage
-
-# ========================================
-# IDE CONFIGURATIONS
-# ========================================
-
-# IntelliJ IDEA
-.idea/
-*.iml
-*.iws
-*.ipr
-out/
-
-# Eclipse
-.classpath
-.project
-.settings/
-bin/
-
-# Visual Studio Code
-.vscode/
-*.code-workspace
-
-# Claude Code
-.claude/
-
-# NetBeans
-nbproject/
-nbbuild/
-nbdist/
-
-# ========================================
-# OPERATING SYSTEM
-# ========================================
-
-# macOS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-
-# Windows
-ehthumbs.db
-Thumbs.db
-desktop.ini
-*.lnk
-
-# Linux
-*~
-.directory
-
-# ========================================
-# COMPILED & NATIVE CODE
-# ========================================
-
-# All executables and binaries (NO EXCEPTIONS)
-*.exe
-*.out
-*.app
-*.com
-
-# C/C++ compiled objects
-*.o
-*.obj
-*.so
-*.dylib
-*.dll
-*.a
-*.lib
-
-# ========================================
-# JAVA
-# ========================================
-
-# Compiled classes
-*.class
-
-# Crash logs
-hs_err_pid*
-replay_pid*
-
-# JVM dumps
-*.hprof
-
-# ========================================
-# LOGS & TEMPORARY FILES
-# ========================================
-
-# Logs
+# Log files
 *.log
-logs/
-*.log.*
+cliente-c/client.log
 
-# Temporary files
-*.tmp
-*.temp
+# IDE files
+.vscode/
+.idea/
 *.swp
 *.swo
-*~
-*.bak
-*.cache
 
-# Debug outputs
-err.txt
-out.txt
-debug.txt
-*.debug
+# Compiled files
+*.exe
+*.obj
+*.o
+*.class
 
-# ========================================
-# SCRIPTS & LEGACY
-# ========================================
-
-# Cleanup scripts (already executed)
-copiar-archivos.ps1
-limpiar-proyecto-ejecutado.ps1
-limpiar-proyecto.ps1
-
-# Old batch scripts (replaced by Gradle tasks)
-INICIAR.bat
-REINICIAR-JUEGO.bat
-iniciar-*.bat
-debug-*.bat
+# OS files
+.DS_Store
+Thumbs.db

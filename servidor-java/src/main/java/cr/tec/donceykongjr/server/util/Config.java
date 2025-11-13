@@ -42,13 +42,13 @@ public class Config {
     public static final double JUGADOR_DELTA_Y_COCODRILO = 30.0;
     public static final double JUGADOR_DELTA_Y_FRUTA = 24.0;
     public static final double JUGADOR_TIEMPO_CELEBRACION = 1.5;
-    public static final double JUGADOR_SPAWN_Y = 480.0;
-    public static final int JUGADOR_SPAWN_LIANA = 2;
+    public static final double JUGADOR_SPAWN_Y = 480.0;  // Cerca del agua (parte inferior)
+    public static final int JUGADOR_SPAWN_LIANA = 1;     // Columna 1 (segunda liana)
     public static final double JUGADOR_SPAWN_X = JUGADOR_SPAWN_LIANA;
 
-    /** Reglas de objetivo/rescate */
-    public static final double OBJETIVO_Y = 60.0;
-    public static final int OBJETIVO_LIANA = 2;
+    /** Reglas de objetivo/rescate - Columna 7 (plataforma de victoria) */
+    public static final double OBJETIVO_Y = 60.0;        // Parte superior
+    public static final int OBJETIVO_LIANA = 7;          // Columna 8 (índice 7)
 
     /** Escalado de dificultad tras cada rescate */
     public static final double COCODRILO_INCREMENTO_DIFICULTAD = 1.10;

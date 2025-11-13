@@ -40,8 +40,9 @@ extern int g_animacionFrame;
 extern int g_efectoGolpe;
 extern int g_efectoFruta;
 extern int g_lianasPosX[MAX_LIANAS];
-extern int g_plataformasPosY[4];
+extern int g_plataformasPosY[8];
 extern int g_abismoY;
+extern int g_aguaY;
 extern int g_donkeyPosX;
 extern int g_donkeyPosY;
 extern int g_conectado;
@@ -50,7 +51,13 @@ extern int g_conectado;
  * Dibuja el escenario completo
  */
 void DibujarEscenario(HDC hdc) {
-    DibujarAbismo(hdc);
+    // Fondo negro
+    HBRUSH hBrushBG = CreateSolidBrush(RGB(0, 0, 0));
+    RECT fondoRect = {0, OFFSET_Y, WINDOW_WIDTH, WINDOW_HEIGHT};
+    FillRect(hdc, &fondoRect, hBrushBG);
+    DeleteObject(hBrushBG);
+
+    DibujarAgua(hdc);
     DibujarPlataformas(hdc);
     DibujarLianas(hdc);
     DibujarDonkeyKong(hdc);
@@ -91,79 +98,172 @@ void DibujarEscenario(HDC hdc) {
 }
 
 /**
- * Dibuja plataformas horizontales
+ * Dibuja agua en la parte inferior del mapa
+ */
+void DibujarAgua(HDC hdc) {
+    // Franja de agua animada
+    HBRUSH hBrushAgua = CreateSolidBrush(RGB(30, 100, 180));
+    RECT agua = {0, g_aguaY, WINDOW_WIDTH, g_abismoY};
+    FillRect(hdc, &agua, hBrushAgua);
+    DeleteObject(hBrushAgua);
+
+    // Ondas animadas
+    HPEN hPenOnda = CreatePen(PS_SOLID, 2, RGB(60, 140, 220));
+    HPEN hPenOld = SelectObject(hdc, hPenOnda);
+    for (int x = 0; x < WINDOW_WIDTH; x += 40) {
+        int offset = (g_animacionFrame + x / 10) % 20 - 10;
+        MoveToEx(hdc, x, g_aguaY + 5 + offset, NULL);
+        LineTo(hdc, x + 20, g_aguaY + 5 - offset);
+    }
+    SelectObject(hdc, hPenOld);
+    DeleteObject(hPenOnda);
+}
+
+/**
+ * Dibuja plataformas según el diseño del nivel de Donkey Kong Jr.
+ * - Plataforma horizontal superior muy larga
+ * - Espacio vacío y luego plataforma de Donkey Kong
+ * - Islas de tierra sobre el agua
  */
 void DibujarPlataformas(HDC hdc) {
-    for (int i = 0; i < MAX_LIANAS; i++) {
-        // Sombra
-        HBRUSH hBrushShadow = CreateSolidBrush(RGB(60, 40, 20));
-        RECT shadow = {OFFSET_X - 20, g_plataformasPosY[i] + 3, OFFSET_X + GAME_WIDTH + 20, g_plataformasPosY[i] + 28};
-        FillRect(hdc, &shadow, hBrushShadow);
-        DeleteObject(hBrushShadow);
+    COLORREF colorTierra = RGB(139, 90, 43);
+    COLORREF colorPasto = RGB(80, 150, 60);
 
-        // Plataforma principal
-        HBRUSH hBrush = CreateSolidBrush(COLOR_PLATAFORMA);
-        RECT plat = {OFFSET_X - 20, g_plataformasPosY[i], OFFSET_X + GAME_WIDTH + 20, g_plataformasPosY[i] + 25};
-        FillRect(hdc, &plat, hBrush);
-        DeleteObject(hBrush);
+    // 1. Plataforma horizontal superior muy larga (casi de lado a lado)
+    HBRUSH hBrushPlat = CreateSolidBrush(colorTierra);
+    RECT platSuperior = {OFFSET_X, g_plataformasPosY[7] + 20, g_donkeyPosX - 80, g_plataformasPosY[7] + 40};
+    FillRect(hdc, &platSuperior, hBrushPlat);
 
-        // Detalles de textura (tablones)
-        HPEN hPen = CreatePen(PS_SOLID, 2, RGB(90, 60, 30));
-        HPEN hPenOld = SelectObject(hdc, hPen);
-        for (int x = OFFSET_X; x < OFFSET_X + GAME_WIDTH; x += 60) {
-            MoveToEx(hdc, x, g_plataformasPosY[i], NULL);
-            LineTo(hdc, x, g_plataformasPosY[i] + 25);
-        }
-        SelectObject(hdc, hPenOld);
-        DeleteObject(hPen);
-    }
+    // Pasto sobre la plataforma superior
+    HBRUSH hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pastoSuperior = {OFFSET_X, g_plataformasPosY[7] + 20, g_donkeyPosX - 80, g_plataformasPosY[7] + 25};
+    FillRect(hdc, &pastoSuperior, hBrushPasto);
+    DeleteObject(hBrushPasto);
+    DeleteObject(hBrushPlat);
+
+    // 2. Plataforma de Donkey Kong (extremo derecho, después del hueco)
+    hBrushPlat = CreateSolidBrush(colorTierra);
+    RECT platDonkey = {g_donkeyPosX - 50, g_donkeyPosY + 50, g_donkeyPosX + 50, g_donkeyPosY + 70};
+    FillRect(hdc, &platDonkey, hBrushPlat);
+
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pastoDonkey = {g_donkeyPosX - 50, g_donkeyPosY + 50, g_donkeyPosX + 50, g_donkeyPosY + 55};
+    FillRect(hdc, &pastoDonkey, hBrushPasto);
+    DeleteObject(hBrushPasto);
+    DeleteObject(hBrushPlat);
+
+    // 3. Islas de tierra sobre el agua (plataformas flotantes donde el mono puede pararse)
+    // Isla en columna 1 (debajo de liana 1)
+    hBrushPlat = CreateSolidBrush(colorTierra);
+    RECT isla1 = {g_lianasPosX[1] - 35, g_aguaY - 25, g_lianasPosX[1] + 35, g_aguaY - 5};
+    FillRect(hdc, &isla1, hBrushPlat);
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pasto1 = {g_lianasPosX[1] - 35, g_aguaY - 25, g_lianasPosX[1] + 35, g_aguaY - 20};
+    FillRect(hdc, &pasto1, hBrushPasto);
+    DeleteObject(hBrushPasto);
+
+    // Isla en columna 3 (debajo de liana 3)
+    RECT isla3 = {g_lianasPosX[3] - 35, g_aguaY - 25, g_lianasPosX[3] + 35, g_aguaY - 5};
+    FillRect(hdc, &isla3, hBrushPlat);
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pasto3 = {g_lianasPosX[3] - 35, g_aguaY - 25, g_lianasPosX[3] + 35, g_aguaY - 20};
+    FillRect(hdc, &pasto3, hBrushPasto);
+    DeleteObject(hBrushPasto);
+
+    // Isla en columna 4 (debajo de liana 4)
+    RECT isla4 = {g_lianasPosX[4] - 30, g_aguaY - 25, g_lianasPosX[4] + 30, g_aguaY - 5};
+    FillRect(hdc, &isla4, hBrushPlat);
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pasto4 = {g_lianasPosX[4] - 30, g_aguaY - 25, g_lianasPosX[4] + 30, g_aguaY - 20};
+    FillRect(hdc, &pasto4, hBrushPasto);
+    DeleteObject(hBrushPasto);
+
+    DeleteObject(hBrushPlat);
+
+    // 4. Plataforma flotante en columna 2 (a mitad de altura)
+    hBrushPlat = CreateSolidBrush(colorTierra);
+    int alturaMedia = (g_plataformasPosY[7] + g_aguaY) / 2;
+    RECT platMedia2 = {g_lianasPosX[2] - 40, alturaMedia - 10, g_lianasPosX[2] + 40, alturaMedia + 5};
+    FillRect(hdc, &platMedia2, hBrushPlat);
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pastoMedia2 = {g_lianasPosX[2] - 40, alturaMedia - 10, g_lianasPosX[2] + 40, alturaMedia - 5};
+    FillRect(hdc, &pastoMedia2, hBrushPasto);
+    DeleteObject(hBrushPasto);
+
+    // Plataforma flotante más abajo en columna 2
+    int alturaBaja2 = alturaMedia + 100;
+    RECT platBaja2 = {g_lianasPosX[2] - 40, alturaBaja2 - 10, g_lianasPosX[2] + 40, alturaBaja2 + 5};
+    FillRect(hdc, &platBaja2, hBrushPlat);
+    hBrushPasto = CreateSolidBrush(colorPasto);
+    RECT pastoBaja2 = {g_lianasPosX[2] - 40, alturaBaja2 - 10, g_lianasPosX[2] + 40, alturaBaja2 - 5};
+    FillRect(hdc, &pastoBaja2, hBrushPasto);
+    DeleteObject(hBrushPasto);
+
+    DeleteObject(hBrushPlat);
 }
 
 /**
- * Dibuja lianas verticales
+ * Dibuja lianas según el diseño del nivel (8 columnas)
+ * Cada columna tiene características específicas de altura y posición
  */
 void DibujarLianas(HDC hdc) {
-    for (int i = 0; i < 4; i++) {
-        int x = g_lianasPosX[i];
+    COLORREF colorOscuro = RGB(101, 67, 33);
+    COLORREF colorClaro = RGB(160, 110, 70);
 
-        // Dibujar liana trenzada
-        for (int y = g_plataformasPosY[0]; y < g_plataformasPosY[3]; y += 2) {
-            int offset = (int)(sin((y + g_animacionFrame * 0.1) * 0.1) * 2);
+    int platSuperior = g_plataformasPosY[7] + 40; // Debajo de la plataforma superior
+    int nivelAgua = g_aguaY - 25; // Justo encima de las islas
 
-            HBRUSH hBrush1 = CreateSolidBrush(COLOR_LIANA_OSCURO);
-            HBRUSH hBrush2 = CreateSolidBrush(COLOR_LIANA_CLARO);
+    // Columna 0: Liana completa desde arriba hasta abajo
+    DibujarLianaSegmento(hdc, g_lianasPosX[0], platSuperior, nivelAgua, colorOscuro, colorClaro);
 
-            RECT r1 = {x - 5 + offset, y, x - 1 + offset, y + 2};
-            RECT r2 = {x + 1 + offset, y, x + 5 + offset, y + 2};
+    // Columna 1: Liana completa desde arriba hasta isla de tierra
+    DibujarLianaSegmento(hdc, g_lianasPosX[1], platSuperior, nivelAgua, colorOscuro, colorClaro);
 
-            FillRect(hdc, &r1, (y / 4) % 2 == 0 ? hBrush1 : hBrush2);
-            FillRect(hdc, &r2, (y / 4) % 2 == 0 ? hBrush2 : hBrush1);
+    // Columna 2: Lianas por secciones (plataforma media hacia abajo)
+    int alturaMedia = (platSuperior + nivelAgua) / 2;
+    int alturaBaja = alturaMedia + 100;
+    DibujarLianaSegmento(hdc, g_lianasPosX[2], alturaMedia - 10, alturaBaja + 5, colorOscuro, colorClaro);
+    DibujarLianaSegmento(hdc, g_lianasPosX[2], alturaBaja + 5, nivelAgua, colorOscuro, colorClaro);
 
-            DeleteObject(hBrush1);
-            DeleteObject(hBrush2);
-        }
-    }
+    // Columna 3: Liana hasta mitad del mapa
+    int mitadMapa = (platSuperior + nivelAgua) / 2;
+    DibujarLianaSegmento(hdc, g_lianasPosX[3], platSuperior, mitadMapa, colorOscuro, colorClaro);
+
+    // Columna 4: Liana corta en la parte inferior
+    int inicioCorta = nivelAgua - 120;
+    DibujarLianaSegmento(hdc, g_lianasPosX[4], inicioCorta, nivelAgua, colorOscuro, colorClaro);
+
+    // Columna 5: Liana larga completa
+    DibujarLianaSegmento(hdc, g_lianasPosX[5], platSuperior, nivelAgua, colorOscuro, colorClaro);
+
+    // Columna 6: Liana normal/media
+    DibujarLianaSegmento(hdc, g_lianasPosX[6], platSuperior + 60, nivelAgua, colorOscuro, colorClaro);
+
+    // Columna 7: Liana de victoria - parte superior (sube hacia Donkey Kong)
+    DibujarLianaSegmento(hdc, g_lianasPosX[7], g_donkeyPosY + 50, platSuperior, colorOscuro, colorClaro);
 }
 
 /**
- * Dibuja zona de abismo
+ * Dibuja un segmento de liana trenzada entre dos puntos Y
  */
-void DibujarAbismo(HDC hdc) {
-    HBRUSH hBrush = CreateSolidBrush(COLOR_ABISMO);
-    RECT abismo = {0, g_abismoY, WINDOW_WIDTH, WINDOW_HEIGHT};
-    FillRect(hdc, &abismo, hBrush);
-    DeleteObject(hBrush);
+void DibujarLianaSegmento(HDC hdc, int x, int yInicio, int yFin, COLORREF colorOscuro, COLORREF colorClaro) {
+    for (int y = yInicio; y < yFin; y += 2) {
+        int offset = (int)(sin((y + g_animacionFrame * 0.1) * 0.1) * 2);
 
-    // Efecto de peligro (líneas rojas parpadeantes)
-    if (g_animacionFrame % 20 < 10) {
-        HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 50, 50));
-        HPEN hPenOld = SelectObject(hdc, hPen);
-        MoveToEx(hdc, 0, g_abismoY, NULL);
-        LineTo(hdc, WINDOW_WIDTH, g_abismoY);
-        SelectObject(hdc, hPenOld);
-        DeleteObject(hPen);
+        HBRUSH hBrush1 = CreateSolidBrush(colorOscuro);
+        HBRUSH hBrush2 = CreateSolidBrush(colorClaro);
+
+        RECT r1 = {x - 5 + offset, y, x - 1 + offset, y + 2};
+        RECT r2 = {x + 1 + offset, y, x + 5 + offset, y + 2};
+
+        FillRect(hdc, &r1, (y / 4) % 2 == 0 ? hBrush1 : hBrush2);
+        FillRect(hdc, &r2, (y / 4) % 2 == 0 ? hBrush2 : hBrush1);
+
+        DeleteObject(hBrush1);
+        DeleteObject(hBrush2);
     }
 }
+
 
 /**
  * Dibuja Donkey Kong en jaula
