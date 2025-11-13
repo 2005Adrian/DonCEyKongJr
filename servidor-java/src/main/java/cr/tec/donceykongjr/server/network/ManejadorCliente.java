@@ -3,7 +3,6 @@ package cr.tec.donceykongjr.server.network;
 import cr.tec.donceykongjr.server.logic.GameManager;
 import cr.tec.donceykongjr.server.logic.eventos.EventoJuego;
 import cr.tec.donceykongjr.server.logic.patrones.Observer;
-import cr.tec.donceykongjr.server.util.Config;
 import cr.tec.donceykongjr.server.util.LoggerUtil;
 
 import java.io.*;
@@ -19,6 +18,7 @@ public class ManejadorCliente implements Runnable, Observer {
     private GameManager gameManager;
     private BufferedReader entrada;
     private PrintWriter salida;
+    private final Object salidaLock = new Object();
     private String jugadorId;
     private boolean conectado;
     private boolean esJugador;
@@ -118,7 +118,7 @@ public class ManejadorCliente implements Runnable, Observer {
         
         String accion = mensaje.getAction();
         if (accion != null) {
-            gameManager.procesarInput(jugadorId, accion, Config.VELOCIDAD_BASE);
+            gameManager.procesarInput(jugadorId, accion);
         }
     }
     
@@ -128,9 +128,7 @@ public class ManejadorCliente implements Runnable, Observer {
     private void enviarEstado() {
         Map<String, Object> estado = gameManager.getEstadoJuego();
         String json = JsonUtil.crearMensajeEstado(estado);
-        if (json != null) {
-            salida.println(json);
-        }
+        enviarJson(json);
     }
     
     /**
@@ -138,9 +136,7 @@ public class ManejadorCliente implements Runnable, Observer {
      */
     private void enviarError(String mensajeError) {
         String json = JsonUtil.crearMensajeError(mensajeError);
-        if (json != null) {
-            salida.println(json);
-        }
+        enviarJson(json);
     }
     
     /**
@@ -176,16 +172,26 @@ public class ManejadorCliente implements Runnable, Observer {
             // Si es un evento específico, enviarlo
             if (dato instanceof EventoJuego) {
                 EventoJuego evento = (EventoJuego) dato;
-                String json = JsonUtil.crearMensajeEvento(evento.getTipo().toString(), evento.getPayload());
-                if (json != null) {
-                    salida.println(json);
-                }
+                enviarEvento(evento);
+            } else {
+                enviarEstado();
             }
-            
-            // Siempre enviar el estado actualizado
-            enviarEstado();
         } catch (Exception e) {
             LoggerUtil.error("error al actualizar cliente: " + e.getMessage());
+        }
+    }
+
+    private void enviarEvento(EventoJuego evento) {
+        String json = JsonUtil.crearMensajeEvento(evento.getTipo().toString(), evento.getPayload());
+        enviarJson(json);
+    }
+
+    private void enviarJson(String json) {
+        if (json == null || salida == null || !conectado) {
+            return;
+        }
+        synchronized (salidaLock) {
+            salida.println(json);
         }
     }
 }

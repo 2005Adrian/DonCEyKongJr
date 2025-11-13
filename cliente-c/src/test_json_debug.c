@@ -46,7 +46,7 @@ int main() {
         return 1;
     }
 
-    printf("✓ Conectado!\n\n");
+    printf("Conectado!\n\n");
 
     // Enviar mensaje de conexión
     char msgConexion[256];
@@ -81,13 +81,23 @@ int main() {
                 printf("%s\n", inicio);
                 printf("----------------------------------------\n");
 
-                // Mostrar análisis básico
-                printf("Análisis:\n");
-                printf("  - level: %s\n", strstr(inicio, "\"level\":") ? "SI" : "NO");
-                printf("  - tick: %s\n", strstr(inicio, "\"tick\":") ? "SI" : "NO");
-                printf("  - players: %s\n", strstr(inicio, "\"players\":[") ? "SI" : "NO");
-                printf("  - crocodiles: %s\n", strstr(inicio, "\"crocodiles\":[") ? "SI" : "NO");
-                printf("  - fruits: %s\n", strstr(inicio, "\"fruits\":[") ? "SI" : "NO");
+                // Mostrar analisis basico
+                printf("Analisis:
+");
+                printf("  - tick: %s
+", strstr(inicio, ""tick":") ? "SI" : "NO");
+                printf("  - speedMultiplier: %s
+", strstr(inicio, ""speedMultiplier":") ? "SI" : "NO");
+                printf("  - celebrationPending: %s
+", strstr(inicio, ""celebrationPending":") ? "SI" : "NO");
+                printf("  - celebrationTimer: %s
+", strstr(inicio, ""celebrationTimer":") ? "SI" : "NO");
+                printf("  - players: %s
+", strstr(inicio, ""players":[") ? "SI" : "NO");
+                printf("  - crocodiles: %s
+", strstr(inicio, ""crocodiles":[") ? "SI" : "NO");
+                printf("  - fruits: %s
+", strstr(inicio, ""fruits":[") ? "SI" : "NO");
 
                 // Contar entidades
                 if (strstr(inicio, "\"players\":[")) {

@@ -23,6 +23,8 @@ public class GameManager extends Subject {
     private double velocidadMultiplicador;
     private boolean pausado;
     private long tickActual;
+    private double celebracionRestante;
+    private boolean reinicioPendiente;
 
     // Motor de cocodrilos independiente
     private MotorCocodrilos motorCocodrilos;
@@ -38,6 +40,8 @@ public class GameManager extends Subject {
         this.velocidadMultiplicador = Config.VELOCIDAD_BASE;
         this.pausado = false;
         this.tickActual = 0;
+        this.celebracionRestante = 0;
+        this.reinicioPendiente = false;
 
         // Crear motor de cocodrilos con dt=0.1s (10 TPS)
         this.motorCocodrilos = new MotorCocodrilos(0.1);
@@ -78,7 +82,7 @@ public class GameManager extends Subject {
         Random random = new Random();
         int numFrutas = 2 + random.nextInt(3);
         for (int i = 0; i < numFrutas; i++) {
-            int liana = random.nextInt(4); // Lianas 0-3
+            int liana = random.nextInt(Math.max(1, lianas.size()));
             double y = 150.0 + random.nextDouble() * 250.0; // Y entre 150 y 400
             int puntos = 10; // Puntos base
 
@@ -94,9 +98,12 @@ public class GameManager extends Subject {
      * Actualiza el estado del juego en cada tick.
      */
     public void actualizar(double deltaTime) {
-        if (pausado) return;
-
         tickActual++;
+
+        if (pausado) {
+            notificarObservadores();
+            return;
+        }
 
         // Sincronizar cocodrilos del motor a la lista local (para colisiones)
         sincronizarCocodrilosDesdeMotor();
@@ -114,8 +121,14 @@ public class GameManager extends Subject {
         // Detectar recogida de frutas
         detectarRecogidaFrutas();
 
+        // Detectar caidas al abismo
+        detectarCaidaAbismo();
+
         // Verificar objetivos
         verificarObjetivos();
+
+        // Gestionar celebraciones pendientes
+        actualizarCelebracion(deltaTime);
 
         // Notificar a los clientes sobre el estado actualizado
         notificarObservadores();
@@ -151,27 +164,25 @@ public class GameManager extends Subject {
      */
     private void detectarColisionesJugadorCocodrilo() {
         for (Jugador jugador : jugadores.values()) {
-            if (!jugador.isActivo()) continue;
-            
+            if (!jugador.isActivo() || jugador.estaCelebrando()) {
+                continue;
+            }
+            Integer lianaJugador = jugador.getLianaId();
+            if (lianaJugador == null) {
+                continue;
+            }
+
             for (Cocodrilo cocodrilo : cocodrilos) {
-                if (!cocodrilo.isActivo()) continue;
-                
-                if (jugador.colisionaCon(cocodrilo)) {
-                    boolean sigueVivo = jugador.perderVida();
-                    
-                    Map<String, Object> payloadHit = new HashMap<>();
-                    payloadHit.put("playerId", jugador.getId());
-                    payloadHit.put("crocodileId", cocodrilo.getId());
-                    EventoJuego evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_HIT, payloadHit);
-                    notificarObservadores(evento);
-                    
-                    if (!sigueVivo) {
-                        Map<String, Object> payloadElim = new HashMap<>();
-                        payloadElim.put("playerId", jugador.getId());
-                        evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_ELIMINATED, payloadElim);
-                        notificarObservadores(evento);
-                        LoggerUtil.info("jugador " + jugador.getId() + " eliminado");
-                    }
+                if (!cocodrilo.isActivo()) {
+                    continue;
+                }
+                if (!Objects.equals(lianaJugador, cocodrilo.getLianaId())) {
+                    continue;
+                }
+
+                if (Math.abs(jugador.getY() - cocodrilo.getY()) <= Config.JUGADOR_DELTA_Y_COCODRILO) {
+                    manejarGolpeJugador(jugador, "CROCODILE:" + cocodrilo.getId());
+                    break;
                 }
             }
         }
@@ -182,12 +193,16 @@ public class GameManager extends Subject {
      */
     private void detectarRecogidaFrutas() {
         for (Jugador jugador : jugadores.values()) {
-            if (!jugador.isActivo()) continue;
+            if (!jugador.isActivo() || jugador.estaCelebrando()) continue;
+            Integer lianaJugador = jugador.getLianaId();
+            if (lianaJugador == null) continue;
             
             Iterator<Fruta> iter = frutas.iterator();
             while (iter.hasNext()) {
                 Fruta fruta = iter.next();
-                if (!fruta.isRecogida() && jugador.colisionaCon(fruta)) {
+                if (!fruta.isRecogida()
+                        && lianaJugador == fruta.getLiana()
+                        && Math.abs(jugador.getY() - fruta.getY()) <= Config.JUGADOR_DELTA_Y_FRUTA) {
                     fruta.recoger();
                     jugador.agregarPuntos(fruta.getPuntos());
                     
@@ -203,30 +218,116 @@ public class GameManager extends Subject {
             }
         }
     }
-    
+
     /**
-     * Verifica si algún jugador alcanzó el objetivo.
+     * Detecta si algun jugador salio de los limites verticales permitidos.
+     */
+    private void detectarCaidaAbismo() {
+        for (Jugador jugador : jugadores.values()) {
+            if (!jugador.isActivo() || jugador.estaCelebrando()) continue;
+            if (jugador.getY() < Config.JUGADOR_Y_MIN) {
+                manejarGolpeJugador(jugador, "ABYSS");
+            }
+        }
+    }
+
+    private void manejarGolpeJugador(Jugador jugador, String causa) {
+        boolean sigueEnJuego = jugador.perderVida();
+
+        Map<String, Object> payloadHit = new HashMap<>();
+        payloadHit.put("playerId", jugador.getId());
+        payloadHit.put("cause", causa);
+        EventoJuego evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_HIT, payloadHit);
+        notificarObservadores(evento);
+
+        if (!sigueEnJuego) {
+            Map<String, Object> payloadElim = new HashMap<>();
+            payloadElim.put("playerId", jugador.getId());
+            evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_ELIMINATED, payloadElim);
+            notificarObservadores(evento);
+            LoggerUtil.info("jugador " + jugador.getId() + " eliminado");
+        } else {
+            jugador.respawnEnSpawn();
+        }
+    }
+    
+        /**
+     * Verifica si algun jugador alcanzo el objetivo.
      */
     private void verificarObjetivos() {
-        // Juego continuo sin niveles
-        // Los jugadores simplemente continúan jugando
+        if (reinicioPendiente) {
+            return;
+        }
+
+        for (Jugador jugador : jugadores.values()) {
+            if (!jugador.isActivo() || jugador.estaCelebrando()) {
+                continue;
+            }
+            Integer lianaActual = jugador.getLianaId();
+            if (lianaActual == null) {
+                continue;
+            }
+
+            if (lianaActual == Config.OBJETIVO_LIANA && jugador.getY() <= Config.OBJETIVO_Y) {
+                iniciarCelebracion(jugador);
+                break;
+            }
+        }
+    }
+
+    private void iniciarCelebracion(Jugador jugador) {
+        reinicioPendiente = true;
+        celebracionRestante = Config.JUGADOR_TIEMPO_CELEBRACION;
+        jugador.iniciarCelebracion();
+
+        try {
+            motorCocodrilos.incrementarDificultad(Config.COCODRILO_INCREMENTO_DIFICULTAD);
+        } catch (IllegalArgumentException e) {
+            LoggerUtil.warning("no se pudo incrementar dificultad: " + e.getMessage());
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("playerId", jugador.getId());
+        EventoJuego evento = new EventoJuego(EventoJuego.TipoEvento.PLAYER_WIN, payload);
+        notificarObservadores(evento);
+
+        LoggerUtil.info("Rescate completado por " + jugador.getId() + ". Factor cocodrilos x" +
+                String.format("%.2f", motorCocodrilos.getFactorDificultad()));
+    }
+
+    private void actualizarCelebracion(double deltaTime) {
+        if (!reinicioPendiente) {
+            return;
+        }
+        celebracionRestante -= deltaTime;
+        if (celebracionRestante <= 0) {
+            reiniciarManteniendoMapa();
+        }
     }
 
     /**
-     * Reinicia el juego aumentando solo la velocidad de los cocodrilos.
-     * Se invoca cuando Donkey Kong Jr. rescata a Donkey Kong.
+     * Reinicia el mapa manteniendo la configuracion actual.
+     * Reubica a los jugadores sin alterar cocodrilos ni frutas.
      */
-    public void reiniciar() {
-        // Incrementar dificultad del motor de cocodrilos (aumenta velocidad)
-        motorCocodrilos.incrementarDificultad(1.2); // +20% de velocidad en cocodrilos
+    public void reiniciarManteniendoMapa() {
+        for (Jugador jugador : jugadores.values()) {
+            jugador.respawnEnSpawn();
+        }
 
-        LoggerUtil.info("Juego reiniciado. Nueva velocidad cocodrilos: x" +
-                       String.format("%.2f", motorCocodrilos.getFactorDificultad()));
-
-        // Notificar a los clientes
-        notificarObservadores();
+        celebracionRestante = 0;
+        reinicioPendiente = false;
+        LoggerUtil.info("Mapa reiniciado. Factor cocodrilos x" +
+                String.format("%.2f", motorCocodrilos.getFactorDificultad()));
     }
-    
+
+    /**
+     * Metodo legacy para compatibilidad con CLI.
+     */
+    @Deprecated
+    public void reiniciar() {
+        reiniciarManteniendoMapa();
+    }
+
     /**
      * Agrega un jugador al juego.
      */
@@ -241,10 +342,15 @@ public class GameManager extends Subject {
             return false;
         }
         
-        Jugador jugador = FactoryEntidad.crearJugador(id, x, y, liana);
+        Jugador jugador = FactoryEntidad.crearJugador(
+                id,
+                Config.JUGADOR_SPAWN_X,
+                Config.JUGADOR_SPAWN_Y,
+                Config.JUGADOR_SPAWN_LIANA,
+                lianas
+        );
         jugadores.put(id, jugador);
         LoggerUtil.info("jugador " + id + " agregado al juego");
-        notificarObservadores();
         return true;
     }
     
@@ -254,7 +360,10 @@ public class GameManager extends Subject {
     public void eliminarJugador(String id) {
         jugadores.remove(id);
         LoggerUtil.info("jugador " + id + " eliminado del juego");
-        notificarObservadores();
+        if (jugadores.isEmpty()) {
+            reinicioPendiente = false;
+            celebracionRestante = 0;
+        }
     }
     
     /**
@@ -267,32 +376,17 @@ public class GameManager extends Subject {
     /**
      * Procesa input de un jugador.
      */
-    public void procesarInput(String jugadorId, String accion, double velocidad) {
+    public void procesarInput(String jugadorId, String accion) {
         Jugador jugador = jugadores.get(jugadorId);
-        if (jugador == null || !jugador.isActivo()) return;
-        
-        switch (accion) {
-            case "MOVE_UP":
-                jugador.moverArriba(velocidad * velocidadMultiplicador);
-                break;
-            case "MOVE_DOWN":
-                jugador.moverAbajo(velocidad * velocidadMultiplicador);
-                break;
-            case "LEFT":
-                jugador.moverIzquierda(velocidad * velocidadMultiplicador);
-                break;
-            case "RIGHT":
-                jugador.moverDerecha(velocidad * velocidadMultiplicador);
-                break;
-            case "JUMP":
-                jugador.saltar(velocidad * velocidadMultiplicador);
-                break;
-            case "GRAB":
-                jugador.agarrarLiana();
-                break;
+        if (jugador == null) {
+            return;
         }
-        
-        notificarObservadores();
+
+        boolean aceptado = jugador.registrarInput(accion);
+        if (!aceptado) {
+            LoggerUtil.debug("input ignorado para jugador " + jugadorId + ": " + accion);
+            return;
+        }
     }
     
     /**
@@ -322,7 +416,6 @@ public class GameManager extends Subject {
 
         if (id != null) {
             LoggerUtil.info("cocodrilo rojo creado en motor: liana=" + liana + ", y=" + y + ", id=" + id);
-            notificarObservadores();
             return null; // Éxito
         } else {
             String error = "No se pudo crear el cocodrilo en el motor";
@@ -357,7 +450,6 @@ public class GameManager extends Subject {
 
         if (id != null) {
             LoggerUtil.info("cocodrilo azul creado en motor: liana=" + liana + ", y=" + y + ", id=" + id);
-            notificarObservadores();
             return null; // Éxito
         } else {
             String error = "No se pudo crear el cocodrilo en el motor";
@@ -407,7 +499,6 @@ public class GameManager extends Subject {
         Fruta fruta = FactoryEntidad.crearFruta(liana, y, puntos);
         frutas.add(fruta);
         LoggerUtil.info("fruta creada en liana " + liana + ", y=" + y + ", puntos=" + puntos);
-        notificarObservadores();
         return null; // Éxito
     }
     
@@ -421,7 +512,6 @@ public class GameManager extends Subject {
             if (fruta.getLiana() == liana && Math.abs(fruta.getY() - y) < 0.5) {
                 iter.remove();
                 LoggerUtil.info("fruta eliminada en liana " + liana + ", y=" + y);
-                notificarObservadores();
                 return true;
             }
         }
@@ -434,23 +524,32 @@ public class GameManager extends Subject {
     public Map<String, Object> getEstadoJuego() {
         Map<String, Object> estado = new HashMap<>();
         estado.put("tick", tickActual);
-        estado.put("speedMultiplier", velocidadMultiplicador);
+        estado.put("speedMultiplier", motorCocodrilos.getFactorDificultad());
         estado.put("paused", pausado);
 
         // Jugadores
         List<Map<String, Object>> jugadoresData = new ArrayList<>();
         for (Jugador jugador : jugadores.values()) {
+            SnapshotJugador snapshot = new SnapshotJugador(jugador);
             Map<String, Object> j = new HashMap<>();
-            j.put("id", jugador.getId());
-            j.put("x", jugador.getX());
-            j.put("y", jugador.getY());
-            j.put("liana", jugador.getLiana());
-            j.put("lives", jugador.getVidas());
-            j.put("score", jugador.getPuntaje());
-            j.put("active", jugador.isActivo());
+            j.put("id", snapshot.getId());
+            j.put("x", snapshot.getX());
+            j.put("y", snapshot.getY());
+            j.put("vx", snapshot.getVx());
+            j.put("vy", snapshot.getVy());
+            j.put("liana", snapshot.getRenderLiana());
+            j.put("lianaId", snapshot.getLianaId());
+            j.put("state", snapshot.getEstado().name());
+            j.put("facing", snapshot.getFacing().name());
+            j.put("lives", snapshot.getLives());
+            j.put("score", snapshot.getScore());
+            j.put("active", snapshot.isActivo());
+            j.put("celebrating", snapshot.isCelebrando());
             jugadoresData.add(j);
         }
         estado.put("players", jugadoresData);
+        estado.put("celebrationPending", reinicioPendiente);
+        estado.put("celebrationTimer", Math.max(celebracionRestante, 0));
 
         // Cocodrilos - obtener del motor
         List<Map<String, Object>> cocodrilosData = new ArrayList<>();
@@ -505,7 +604,9 @@ public class GameManager extends Subject {
             sb.append("  - ").append(j.getId()).append(" (liana=").append(j.getLiana())
               .append(", y=").append(String.format("%.2f", j.getY()))
               .append(", vidas=").append(j.getVidas())
-              .append(", puntos=").append(j.getPuntaje()).append(")\n");
+              .append(", puntos=").append(j.getPuntaje())
+              .append(", estado=").append(j.getEstado())
+              .append(", facing=").append(j.getFacing()).append(")\n");
         }
 
         // Obtener cocodrilos del motor
@@ -537,7 +638,6 @@ public class GameManager extends Subject {
     public void setPausado(boolean pausado) {
         this.pausado = pausado;
         LoggerUtil.info("juego " + (pausado ? "pausado" : "reanudado"));
-        notificarObservadores();
     }
 
     public double getVelocidadMultiplicador() {
@@ -548,4 +648,5 @@ public class GameManager extends Subject {
         return tickActual;
     }
 }
+
 

@@ -39,7 +39,7 @@ extern EstadoActual g_estadoActual;
 extern int g_animacionFrame;
 extern int g_efectoGolpe;
 extern int g_efectoFruta;
-extern int g_lianasPosX[4];
+extern int g_lianasPosX[MAX_LIANAS];
 extern int g_plataformasPosY[4];
 extern int g_abismoY;
 extern int g_donkeyPosX;
@@ -71,13 +71,30 @@ void DibujarEscenario(HDC hdc) {
             DibujarJugadorMejorado(hdc, &g_estadoActual.jugadores[i]);
         }
     }
+
+    if (g_estadoActual.celebrationPending) {
+        char celebracion[64];
+        double tiempo = g_estadoActual.celebrationTimer;
+        if (tiempo < 0) tiempo = 0;
+        sprintf(celebracion, "RESCATE EN %.1fs", tiempo);
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(255, 220, 120));
+        HFONT hFont = CreateFont(28, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+                                 OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                                 DEFAULT_PITCH | FF_SWISS, "Arial");
+        HFONT oldFont = SelectObject(hdc, hFont);
+        RECT msgRect = {OFFSET_X, OFFSET_Y - 50, OFFSET_X + GAME_WIDTH, OFFSET_Y - 10};
+        DrawText(hdc, celebracion, -1, &msgRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        SelectObject(hdc, oldFont);
+        DeleteObject(hFont);
+    }
 }
 
 /**
  * Dibuja plataformas horizontales
  */
 void DibujarPlataformas(HDC hdc) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < MAX_LIANAS; i++) {
         // Sombra
         HBRUSH hBrushShadow = CreateSolidBrush(RGB(60, 40, 20));
         RECT shadow = {OFFSET_X - 20, g_plataformasPosY[i] + 3, OFFSET_X + GAME_WIDTH + 20, g_plataformasPosY[i] + 28};
@@ -202,68 +219,82 @@ void DibujarJugadorMejorado(HDC hdc, Jugador* j) {
 
     if (x < 0 || y < 0) return;
 
-    // Efecto de golpe (parpadeo)
     if (g_efectoGolpe > 0 && g_animacionFrame % 4 < 2) return;
 
-    // OPCIÓN 1: USAR SPRITES SI ESTÁN DISPONIBLES
-    // Calcular velocidades aproximadas (simplificado)
-    static double ultimaY = 0;
-    static double ultimaX = 0;
-    double velocidadY = j->y - ultimaY;
-    double velocidadX = (j->liana * 100) - ultimaX;
-    ultimaY = j->y;
-    ultimaX = j->liana * 100;
-
-    Sprite* spriteActual = obtenerSpriteJr(velocidadY, velocidadX, j->liana >= 0);
+    int enLiana = (j->lianaId >= 0);
+    Sprite* spriteActual = obtenerSpriteJr(j->state, j->facing, j->vy, j->vx);
 
     if (spriteActual && spriteActual->bitmap) {
-        // Dibujar sprite con tamaño fijo (40x40)
         dibujarSpriteEscalado(hdc, spriteActual, x - 20, y - 35, 40, 50);
         return;
     }
 
-    // OPCIÓN 2: FALLBACK A GRÁFICOS GDI (si no hay sprite)
-    // Cuerpo (camisa roja)
+    int estaCelebrando = j->celebrating || (j->state[0] && strcmp(j->state, "CELEBRANDO") == 0);
+    if (estaCelebrando) {
+        HPEN penGlow = CreatePen(PS_DOT, 2, RGB(255, 215, 0));
+        HPEN oldPen = SelectObject(hdc, penGlow);
+        HBRUSH oldBrush = SelectObject(hdc, GetStockObject(HOLLOW_BRUSH));
+        Ellipse(hdc, x - 28, y - 50, x + 28, y + 10);
+        SelectObject(hdc, oldBrush);
+        SelectObject(hdc, oldPen);
+        DeleteObject(penGlow);
+    }
+
     HBRUSH hBrushBody = CreateSolidBrush(COLOR_JR_ROJO);
     SelectObject(hdc, hBrushBody);
     RECT body = {x - 12, y - 20, x + 12, y + 5};
     RoundRect(hdc, body.left, body.top, body.right, body.bottom, 8, 8);
     DeleteObject(hBrushBody);
 
-    // Cabeza
     HBRUSH hBrushHead = CreateSolidBrush(COLOR_JR_PIEL);
     SelectObject(hdc, hBrushHead);
     Ellipse(hdc, x - 10, y - 32, x + 10, y - 12);
     DeleteObject(hBrushHead);
 
-    // Gorra (parte superior de la cabeza)
     HBRUSH hBrushCap = CreateSolidBrush(COLOR_JR_ROJO);
     SelectObject(hdc, hBrushCap);
     Ellipse(hdc, x - 11, y - 34, x + 11, y - 20);
     DeleteObject(hBrushCap);
 
-    // Ojos
+    int miraIzquierda = (j->facing[0] && strcmp(j->facing, "LEFT") == 0);
     HBRUSH hBrushEye = CreateSolidBrush(RGB(0, 0, 0));
     SelectObject(hdc, hBrushEye);
-    Ellipse(hdc, x - 6, y - 24, x - 2, y - 20);
-    Ellipse(hdc, x + 2, y - 24, x + 6, y - 20);
+    if (miraIzquierda) {
+        Ellipse(hdc, x - 8, y - 24, x - 4, y - 20);
+        Ellipse(hdc, x - 2, y - 24, x + 2, y - 20);
+    } else {
+        Ellipse(hdc, x - 6, y - 24, x - 2, y - 20);
+        Ellipse(hdc, x + 2, y - 24, x + 6, y - 20);
+    }
     DeleteObject(hBrushEye);
 
-    // Brazos (en posición de trepar)
     HBRUSH hBrushArm = CreateSolidBrush(COLOR_JR_PIEL);
     SelectObject(hdc, hBrushArm);
     int armOffset = (g_animacionFrame / 5) % 2 == 0 ? -3 : 3;
-    Ellipse(hdc, x - 18, y - 18 + armOffset, x - 10, y - 10 + armOffset);
-    Ellipse(hdc, x + 10, y - 18 - armOffset, x + 18, y - 10 - armOffset);
+    if (enLiana) {
+        Ellipse(hdc, x - 18, y - 18 + armOffset, x - 10, y - 10 + armOffset);
+        Ellipse(hdc, x + 10, y - 18 - armOffset, x + 18, y - 10 - armOffset);
+    } else if (miraIzquierda) {
+        Ellipse(hdc, x - 20, y - 15 + armOffset, x - 12, y - 7 + armOffset);
+        Ellipse(hdc, x + 8, y - 10 - armOffset, x + 16, y - 2 - armOffset);
+    } else {
+        Ellipse(hdc, x - 16, y - 10 + armOffset, x - 8, y - 2 + armOffset);
+        Ellipse(hdc, x + 12, y - 15 - armOffset, x + 20, y - 7 - armOffset);
+    }
     DeleteObject(hBrushArm);
 
-    // Piernas
     HBRUSH hBrushLeg = CreateSolidBrush(RGB(100, 80, 60));
     SelectObject(hdc, hBrushLeg);
-    Rectangle(hdc, x - 10, y + 5, x - 5, y + 15);
-    Rectangle(hdc, x + 5, y + 5, x + 10, y + 15);
+    if (miraIzquierda) {
+        Rectangle(hdc, x - 12, y + 5, x - 6, y + 17);
+        Rectangle(hdc, x + 2, y + 5, x + 8, y + 17);
+    } else {
+        Rectangle(hdc, x - 10, y + 5, x - 4, y + 17);
+        Rectangle(hdc, x + 4, y + 5, x + 10, y + 17);
+    }
     DeleteObject(hBrushLeg);
 }
+
 
 /**
  * Dibuja cocodrilo mejorado
@@ -398,6 +429,7 @@ void DibujarHUDVisual(HDC hdc) {
     SetBkMode(hdc, TRANSPARENT);
     SetTextColor(hdc, COLOR_TEXT);
 
+
     // Vidas (corazones)
     for (int i = 0; i < 3; i++) {
         if (g_estadoActual.numJugadores > 0 && i < g_estadoActual.jugadores[0].lives) {
@@ -433,16 +465,26 @@ void DibujarHUDVisual(HDC hdc) {
     SelectObject(hdc, hOldFont);
     DeleteObject(hFontBig);
 
-    // Nivel
+    // Velocidad de cocodrilos y estado del jugador
     HFONT hFontSmall = CreateFont(20, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
                                    OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                                    DEFAULT_PITCH | FF_SWISS, "Arial");
     SelectObject(hdc, hFontSmall);
 
-    char levelText[32];
-    sprintf(levelText, "NIVEL %d", g_estadoActual.level);
-    RECT levelRect = {WINDOW_WIDTH - 150, 15, WINDOW_WIDTH - 20, 45};
-    DrawText(hdc, levelText, -1, &levelRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    double factor = g_estadoActual.speedMultiplier > 0.0 ? g_estadoActual.speedMultiplier : 1.0;
+    char velocidadText[32];
+    sprintf(velocidadText, "CROCS x%.2f", factor);
+    RECT levelRect = {WINDOW_WIDTH - 170, 10, WINDOW_WIDTH - 20, 35};
+    DrawText(hdc, velocidadText, -1, &levelRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+    const char* estadoJugador = "SIN_JUGADOR";
+    if (g_estadoActual.numJugadores > 0 && g_estadoActual.jugadores[0].state[0]) {
+        estadoJugador = g_estadoActual.jugadores[0].state;
+    }
+    char estadoText[48];
+    sprintf(estadoText, "ESTADO %s", estadoJugador);
+    RECT estadoRect = {WINDOW_WIDTH - 200, 30, WINDOW_WIDTH - 20, 60};
+    DrawText(hdc, estadoText, -1, &estadoRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
     // Indicador de conexión
     if (g_conectado) {
@@ -460,12 +502,15 @@ void DibujarHUDVisual(HDC hdc) {
 
     // Debug info - Mostrando cantidad de entidades y tick
     char info[128];
-    sprintf(info, "P:%d C:%d F:%d | Nivel:%d | Score:%d | Vidas:%d | Tick:%ld",
+    sprintf(info, "P:%d C:%d F:%d | Score:%d | Vidas:%d | Estado:%s | Crocs:%.2f | Tick:%ld | Celebracion:%s(%.1fs)",
             g_estadoActual.numJugadores, g_estadoActual.numCocodrilos, g_estadoActual.numFrutas,
-            g_estadoActual.level,
             g_estadoActual.numJugadores > 0 ? g_estadoActual.jugadores[0].score : 0,
             g_estadoActual.numJugadores > 0 ? g_estadoActual.jugadores[0].lives : 0,
-            g_estadoActual.tick);
+            estadoJugador,
+            factor,
+            g_estadoActual.tick,
+            g_estadoActual.celebrationPending ? "SI" : "NO",
+            g_estadoActual.celebrationTimer);
 
     RECT debugRect = {10, WINDOW_HEIGHT - 25, 500, WINDOW_HEIGHT - 5};
     HFONT hFontDebug = CreateFont(14, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,

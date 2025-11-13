@@ -10,9 +10,14 @@
 #include "render.h"
 #include "input.h"
 #include "sprites.h"
+#include "log_utils.h"
 
 // Prototipo del procedimiento de ventana
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+static LONG WINAPI ClientUnhandledException(EXCEPTION_POINTERS* info) {
+    client_log("Unhandled exception: 0x%08lX", info ? info->ExceptionRecord->ExceptionCode : 0);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
 
 /**
  * Punto de entrada principal
@@ -21,6 +26,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WNDCLASSEX wc;
     MSG msg;
 
+    client_log("WinMain iniciado");
+    SetUnhandledExceptionFilter(ClientUnhandledException);
     // Generar ID único para el jugador
     srand(time(NULL));
     sprintf(g_miPlayerId, "Player_%d", rand() % 10000);
@@ -63,13 +70,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    ShowWindow(g_hwnd, nCmdShow);
-    UpdateWindow(g_hwnd);
+    // Inicializar sistema de input ANTES de mostrar ventana (evita race condition)
+    inicializarInput();
 
     // Cargar sprites (si existen)
     printf("\n");
     cargarSprites();
     printf("\n");
+
+    ShowWindow(g_hwnd, nCmdShow);
+    UpdateWindow(g_hwnd);
 
     // Conectar al servidor
     if (conectarServidor()) {
@@ -79,11 +89,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         enviarMensaje(msgConexion);
         free(msgConexion);
 
-        CreateThread(NULL, 0, ThreadRed, NULL, 0, NULL);
-        SetTimer(g_hwnd, 1, 33, NULL); // 30 FPS
+        g_threadRed = CreateThread(NULL, 0, ThreadRed, NULL, 0, NULL);
+        SetTimer(g_hwnd, 1, 33, NULL); // Timer 1: 30 FPS rendering
+        SetTimer(g_hwnd, 2, 50, NULL); // Timer 2: 20 Hz input (sincronizado con servidor)
+        client_log("Conexion establecida, juego iniciado");
     } else {
         g_estadoPantalla = ESTADO_DESCONECTADO;
         SetTimer(g_hwnd, 1, 100, NULL);
+        client_log("No se pudo conectar al servidor");
     }
 
     // Loop principal
@@ -93,9 +106,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // Limpiar recursos
+    // Esperar a que el thread de red termine (timeout de 2 segundos)
+    if (g_threadRed != NULL) {
+        WaitForSingleObject(g_threadRed, 2000);
+        CloseHandle(g_threadRed);
+        g_threadRed = NULL;
+        client_log("Thread de red cerrado");
+    }
+
     desconectarServidor();
+    limpiarRecursosRed();
+    limpiarRecursosInput();
     liberarSprites();
 
+    client_log("WinMain finalizado");
     return msg.wParam;
 }
 
@@ -118,6 +142,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             RECT rect = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
             FillRect(hdcMem, &rect, hBrushBg);
             DeleteObject(hBrushBg);
+
+            // Proteger lectura de g_estadoActual con mutex
+            bloquearEstado();
 
             // Dibujar según estado
             switch (g_estadoPantalla) {
@@ -151,6 +178,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                     break;
             }
 
+            // Liberar mutex después del renderizado
+            desbloquearEstado();
+
             // Copiar buffer a pantalla
             BitBlt(hdc, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, hdcMem, 0, 0, SRCCOPY);
 
@@ -164,26 +194,45 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         case WM_TIMER:
-            g_animacionFrame++;
-            if (g_efectoGolpe > 0) g_efectoGolpe--;
-            if (g_efectoFruta > 0) g_efectoFruta--;
-            InvalidateRect(hwnd, NULL, FALSE);
+            if (wParam == 1) {
+                // Timer 1: Renderizado a 30 FPS
+                g_animacionFrame++;
+                if (g_efectoGolpe > 0) g_efectoGolpe--;
+                if (g_efectoFruta > 0) g_efectoFruta--;
+                InvalidateRect(hwnd, NULL, FALSE);
+            } else if (wParam == 2) {
+                // Timer 2: Input polling a 20 Hz (sincronizado con servidor)
+                if (g_estadoPantalla == ESTADO_JUGANDO && g_conectado) {
+                    procesarInputsAcumulados();
+                }
+            }
             break;
 
         case WM_KEYDOWN:
             if (g_estadoPantalla == ESTADO_TITULO) {
                 g_estadoPantalla = ESTADO_JUGANDO;
             } else if (g_estadoPantalla == ESTADO_JUGANDO) {
-                procesarTecla(wParam);
+                marcarTeclaPresionada(wParam);
+            }
+            break;
+
+        case WM_KEYUP:
+            if (g_estadoPantalla == ESTADO_JUGANDO) {
+                marcarTeclaSoltada(wParam);
             }
             break;
 
         case WM_CLOSE:
             g_juegoActivo = 0;
+            client_log("WM_CLOSE recibido");
+            // Matar timers antes de destruir ventana
+            KillTimer(hwnd, 1);
+            KillTimer(hwnd, 2);
             DestroyWindow(hwnd);
             break;
 
         case WM_DESTROY:
+            client_log("WM_DESTROY recibido");
             PostQuitMessage(0);
             break;
 

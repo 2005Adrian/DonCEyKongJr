@@ -134,12 +134,39 @@ void dibujarSpriteEscalado(HDC hdc, Sprite* sprite, int x, int y, int width, int
 }
 
 // Obtiene el sprite correcto de Jr según su estado de movimiento
-Sprite* obtenerSpriteJr(double velocidadY, double velocidadX, int enLiana) {
-    if (velocidadY < -0.5 && sprites_jr.subiendo.bitmap) return &sprites_jr.subiendo;
-    if (velocidadY > 0.5 && sprites_jr.bajando.bitmap) return &sprites_jr.bajando;
-    if (velocidadX < -0.5 && sprites_jr.izquierda.bitmap) return &sprites_jr.izquierda;
-    if (velocidadX > 0.5 && sprites_jr.derecha.bitmap) return &sprites_jr.derecha;
-    if (!enLiana && sprites_jr.saltando.bitmap) return &sprites_jr.saltando;
+Sprite* obtenerSpriteJr(const char* estado, const char* facing, double velocidadY, double velocidadX) {
+    const double LIMITE_VERTICAL = 5.0;
+    const double LIMITE_HORIZONTAL = 0.5;
+
+    if (estado) {
+        if (strcmp(estado, "EN_LIANA") == 0) {
+            if (velocidadY < -LIMITE_VERTICAL && sprites_jr.subiendo.bitmap) return &sprites_jr.subiendo;
+            if (velocidadY > LIMITE_VERTICAL && sprites_jr.bajando.bitmap) return &sprites_jr.bajando;
+            if (sprites_jr.saltando.bitmap) return &sprites_jr.saltando;
+        }
+        if (strcmp(estado, "SALTANDO") == 0 && sprites_jr.saltando.bitmap) {
+            return &sprites_jr.saltando;
+        }
+        if (strcmp(estado, "CELEBRANDO") == 0 && sprites_jr.frente.bitmap) {
+            return &sprites_jr.frente;
+        }
+        if (strcmp(estado, "MUERTO") == 0 && sprites_jr.saltando.bitmap) {
+            return &sprites_jr.saltando;
+        }
+    }
+
+    if (velocidadX < -LIMITE_HORIZONTAL && sprites_jr.izquierda.bitmap) return &sprites_jr.izquierda;
+    if (velocidadX > LIMITE_HORIZONTAL && sprites_jr.derecha.bitmap) return &sprites_jr.derecha;
+
+    if (estado && strcmp(estado, "SUELO") == 0) {
+        if (facing && strcmp(facing, "LEFT") == 0 && sprites_jr.izquierda.bitmap) {
+            return &sprites_jr.izquierda;
+        }
+        if (facing && strcmp(facing, "RIGHT") == 0 && sprites_jr.derecha.bitmap) {
+            return &sprites_jr.derecha;
+        }
+    }
+
     if (sprites_jr.frente.bitmap) return &sprites_jr.frente;
     return NULL;
 }

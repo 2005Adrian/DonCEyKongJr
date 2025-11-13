@@ -8,10 +8,16 @@ typedef struct {
     char id[32];
     double x;
     double y;
+    double vx;
+    double vy;
     int liana;
+    int lianaId;
     int lives;
     int score;
     int active;
+    int celebrating;
+    char state[16];
+    char facing[8];
 } Jugador;
 
 // Estructura para representar un cocodrilo
@@ -33,9 +39,10 @@ typedef struct {
 // Estructura para representar el estado completo del juego
 typedef struct {
     long tick;
-    int level;
     double speedMultiplier;
     int paused;
+    int celebrationPending;
+    double celebrationTimer;
 
     Jugador jugadores[MAX_JUGADORES];
     int numJugadores;

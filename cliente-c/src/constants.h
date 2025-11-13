@@ -17,13 +17,14 @@
 #define SCREEN_HEIGHT 30
 
 // Teclas de control
-#define KEY_LEFT 'a'
-#define KEY_RIGHT 'd'
-#define KEY_UP 'w'
-#define KEY_DOWN 's'
-#define KEY_JUMP 32  // Espacio
-#define KEY_GRAB 'e'
-#define KEY_QUIT 'q'
+#define KEY_LEFT 'A'
+#define KEY_RIGHT 'D'
+#define KEY_UP 'W'
+#define KEY_DOWN 'S'
+#define KEY_JUMP VK_SPACE
+#define KEY_GRAB_SHIFT VK_SHIFT
+#define KEY_GRAB_CTRL VK_CONTROL
+#define KEY_QUIT 'Q'
 
 // Velocidad de movimiento
 #define VELOCIDAD_MOVIMIENTO 1.0

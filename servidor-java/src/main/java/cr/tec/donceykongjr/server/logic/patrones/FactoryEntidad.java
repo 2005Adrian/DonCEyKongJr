@@ -46,10 +46,10 @@ public class FactoryEntidad {
     }
     
     /**
-     * Crea un jugador.
+     * Crea un jugador asociado a las lianas activas.
      */
-    public static Jugador crearJugador(String id, double x, double y, int liana) {
-        return new Jugador(id, x, y, liana);
+    public static Jugador crearJugador(String id, double x, double y, int liana, java.util.List<Liana> lianas) {
+        return new Jugador(id, x, y, liana, lianas);
     }
     
     /**

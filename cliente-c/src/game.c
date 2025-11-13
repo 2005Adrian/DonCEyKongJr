@@ -3,7 +3,7 @@
 // Definición de variables globales
 HWND g_hwnd;
 SOCKET g_sockCliente;
-EstadoActual g_estadoActual;
+EstadoActual g_estadoActual = {0};
 char g_miPlayerId[32];
 int g_juegoActivo = 1;
 int g_conectado = 0;
@@ -11,9 +11,10 @@ EstadoPantalla g_estadoPantalla = ESTADO_TITULO;
 int g_animacionFrame = 0;
 int g_efectoGolpe = 0;
 int g_efectoFruta = 0;
+HANDLE g_threadRed = NULL;
 
 // Posiciones fijas del escenario
-int g_lianasPosX[4] = {150, 300, 450, 600};
+int g_lianasPosX[MAX_LIANAS] = {140, 260, 380, 500, 620};
 int g_plataformasPosY[4] = {150, 280, 410, 540};
 int g_abismoY = 580;
 int g_donkeyPosX = 400;
@@ -21,7 +22,7 @@ int g_donkeyPosY = 50;
 
 // Funciones de utilidad
 int gameToScreenX(int liana) {
-    if (liana < 0 || liana >= 4) return -1;
+    if (liana < 0 || liana >= MAX_LIANAS) return -1;
     return g_lianasPosX[liana];
 }
 

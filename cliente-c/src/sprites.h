@@ -40,6 +40,6 @@ void dibujarSprite(HDC hdc, Sprite* sprite, int x, int y);
 void dibujarSpriteEscalado(HDC hdc, Sprite* sprite, int x, int y, int width, int height);
 
 // Función para obtener el sprite correcto de Jr según su estado
-Sprite* obtenerSpriteJr(double velocidadY, double velocidadX, int enLiana);
+Sprite* obtenerSpriteJr(const char* estado, const char* facing, double velocidadY, double velocidadX);
 
 #endif // SPRITES_H

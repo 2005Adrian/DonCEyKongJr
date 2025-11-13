@@ -1,7 +1,7 @@
 package cr.tec.donceykongjr.server.logic.patrones;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Clase base para el patrón Observer.
@@ -14,7 +14,7 @@ public abstract class Subject {
      * Constructor del sujeto.
      */
     public Subject() {
-        this.observadores = new ArrayList<>();
+        this.observadores = new CopyOnWriteArrayList<>();
     }
     
     /**
