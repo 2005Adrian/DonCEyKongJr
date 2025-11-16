@@ -361,6 +361,20 @@ void parsearEstadoJSON(const char* json) {
 
     EnterCriticalSection(&g_estadoLock);
     g_estadoActual = nuevo;
+
+    // REINICIO AUTOMÁTICO: Si estábamos en victoria/game over y el servidor reinició,
+    // volver automáticamente a ESTADO_JUGANDO cuando detectemos jugadores activos no celebrando
+    if (g_estadoPantalla == ESTADO_VICTORIA || g_estadoPantalla == ESTADO_GAME_OVER) {
+        // Buscar si hay algún jugador activo que no esté celebrando (reinicio detectado)
+        for (int i = 0; i < g_estadoActual.numJugadores; i++) {
+            if (g_estadoActual.jugadores[i].active && !g_estadoActual.jugadores[i].celebrating) {
+                g_estadoPantalla = ESTADO_JUGANDO;
+                client_log("reinicio detectado - volviendo a ESTADO_JUGANDO");
+                break;
+            }
+        }
+    }
+
     LeaveCriticalSection(&g_estadoLock);
 }
 

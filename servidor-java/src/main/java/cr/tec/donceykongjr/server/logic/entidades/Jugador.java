@@ -31,6 +31,7 @@ public class Jugador extends Entidad {
     private boolean activo;
     private double grabBufferTimer;
     private double celebracionTimer;
+    private double cambioLianaCooldown; // Cooldown para prevenir múltiples cambios de liana
 
     private boolean moveLeftRequested;
     private boolean moveRightRequested;
@@ -103,11 +104,26 @@ public class Jugador extends Entidad {
         if (estado == EstadoJugador.CELEBRANDO && celebracionTimer > 0) {
             celebracionTimer = Math.max(0, celebracionTimer - deltaTime);
         }
+        if (cambioLianaCooldown > 0) {
+            cambioLianaCooldown = Math.max(0, cambioLianaCooldown - deltaTime);
+        }
     }
 
     private void actualizarEnSuelo(InputSnapshot input, double deltaTime) {
-        aplicarMovimientoHorizontal(input.horizontalDirection(), deltaTime);
+        // Verificar si el jugador está realmente sobre suelo sólido
+        if (!estaEnSuelo()) {
+            // No hay suelo debajo, comenzar a caer
+            estado = EstadoJugador.SALTANDO;
+            vy = 0; // Comenzar a caer desde velocidad 0
+            return;
+        }
+
+        // Movimiento horizontal en el suelo (caminar)
+        aplicarMovimientoHorizontal(input.horizontalDirection(), deltaTime, false); // En suelo: control normal
         vy = 0;
+
+        // Mantener al jugador en el nivel del suelo
+        y = Config.ALTURA_SUELO;
 
         // Si presiona UP o DOWN y hay una liana cerca, agarrarla automáticamente
         double verticalDir = input.verticalDirection();
@@ -132,21 +148,34 @@ public class Jugador extends Entidad {
         }
     }
 
+    /**
+     * Verifica si el jugador está sobre suelo sólido.
+     * Por ahora, el suelo existe en toda la extensión horizontal en Y=ALTURA_SUELO.
+     */
+    private boolean estaEnSuelo() {
+        // El suelo es una plataforma completa en Y=475 que cubre todas las columnas (0-7)
+        return y >= Config.ALTURA_SUELO - 5 && y <= Config.ALTURA_SUELO + 5;
+    }
+
     private void actualizarEnSalto(InputSnapshot input, double deltaTime) {
-        aplicarMovimientoHorizontal(input.horizontalDirection(), deltaTime);
+        aplicarMovimientoHorizontal(input.horizontalDirection(), deltaTime, true); // En aire: control limitado
 
         vy += Config.JUGADOR_GRAVEDAD * deltaTime;
         y += vy * deltaTime;
 
-        if (y >= Config.JUGADOR_Y_MAX) {
-            y = Config.JUGADOR_Y_MAX;
+        // Si alcanza el suelo seguro, aterriza
+        if (y >= Config.ALTURA_SUELO && vy > 0) {
+            y = Config.ALTURA_SUELO;
             estado = EstadoJugador.SUELO;
             vy = 0;
         }
 
+        // Intentar agarrar liana durante el salto
         if (grabBufferTimer > 0) {
             intentarAgarrarLiana();
         }
+
+        // NOTA: Si cae más allá de ALTURA_SUELO, el GameManager detectará la caída al agua
     }
 
     private void actualizarEnLiana(InputSnapshot input, double deltaTime) {
@@ -160,9 +189,9 @@ public class Jugador extends Entidad {
             vy = 0;
         }
 
-        // Movimiento horizontal: cambiar de liana
+        // Movimiento horizontal: cambiar de liana (con cooldown para prevenir saltos múltiples)
         int horizontalDir = input.horizontalDirection();
-        if (horizontalDir != 0) {
+        if (horizontalDir != 0 && cambioLianaCooldown <= 0) {
             // Intentar moverse a liana adyacente
             int lianaDestino = lianaId + horizontalDir;
             if (lianasPorId.containsKey(lianaDestino)) {
@@ -173,6 +202,8 @@ public class Jugador extends Entidad {
                     limitarYALiana();
                     actualizarIndiceVisual();
                     facing = horizontalDir < 0 ? DireccionJugador.LEFT : DireccionJugador.RIGHT;
+                    // Activar cooldown para prevenir cambios múltiples
+                    cambioLianaCooldown = Config.JUGADOR_CAMBIO_LIANA_COOLDOWN;
                 }
             }
         }
@@ -183,14 +214,56 @@ public class Jugador extends Entidad {
         }
     }
 
-    private void aplicarMovimientoHorizontal(int direccion, double deltaTime) {
+    /**
+     * Aplica movimiento horizontal con aceleración gradual y fricción.
+     *
+     * @param direccion -1 (izquierda), 0 (ninguna), 1 (derecha)
+     * @param deltaTime tiempo transcurrido en segundos
+     * @param enAire true si el jugador está en el aire (control limitado)
+     */
+    private void aplicarMovimientoHorizontal(int direccion, double deltaTime, boolean enAire) {
+        // Calcular aceleración (reducida en el aire)
+        double aceleracion = Config.JUGADOR_ACELERACION_HORIZONTAL;
+        if (enAire) {
+            aceleracion *= Config.JUGADOR_CONTROL_AEREO_MULT; // 60% de control en el aire
+        }
+
         if (direccion != 0) {
-            vx = direccion * Config.JUGADOR_VEL_HORIZONTAL;
-            x += vx * deltaTime;
+            // Acelerar en la dirección indicada
+            double velocidadObjetivo = direccion * Config.JUGADOR_VEL_HORIZONTAL_MAX;
+
+            // Aceleración gradual hacia la velocidad objetivo
+            if (Math.abs(vx - velocidadObjetivo) > 0.1) {
+                double deltaV = aceleracion * deltaTime * direccion;
+                vx += deltaV;
+
+                // Limitar a velocidad máxima
+                if (direccion > 0) {
+                    vx = Math.min(vx, Config.JUGADOR_VEL_HORIZONTAL_MAX);
+                } else {
+                    vx = Math.max(vx, -Config.JUGADOR_VEL_HORIZONTAL_MAX);
+                }
+            } else {
+                vx = velocidadObjetivo;
+            }
+
             facing = direccion < 0 ? DireccionJugador.LEFT : DireccionJugador.RIGHT;
         } else {
-            vx = 0;
+            // Sin input: aplicar fricción para desacelerar
+            if (Math.abs(vx) > 0.1) {
+                double friccion = Config.JUGADOR_FRICCION * deltaTime;
+                if (vx > 0) {
+                    vx = Math.max(0, vx - friccion);
+                } else {
+                    vx = Math.min(0, vx + friccion);
+                }
+            } else {
+                vx = 0;
+            }
         }
+
+        // Aplicar velocidad a posición
+        x += vx * deltaTime;
     }
 
     private void clampHorizontal() {
@@ -346,6 +419,7 @@ public class Jugador extends Entidad {
         vy = 0;
         lianaId = null;
         grabBufferTimer = 0;
+        cambioLianaCooldown = 0;
         actualizarIndiceVisual();
 
         if (vidas <= 0) {
@@ -367,6 +441,7 @@ public class Jugador extends Entidad {
         estado = EstadoJugador.SUELO;
         grabBufferTimer = 0;
         celebracionTimer = 0;
+        cambioLianaCooldown = 0;
         if (vidas > 0) {
             activo = true;
         }
@@ -384,6 +459,7 @@ public class Jugador extends Entidad {
         celebracionTimer = Config.JUGADOR_TIEMPO_CELEBRACION;
         vx = 0;
         vy = 0;
+        cambioLianaCooldown = 0;
     }
 
     public boolean celebracionListaParaReinicio() {

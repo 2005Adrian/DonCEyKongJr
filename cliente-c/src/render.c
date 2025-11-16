@@ -236,8 +236,10 @@ void DibujarLianas(HDC hdc) {
     // Columna 5: Liana larga completa
     DibujarLianaSegmento(hdc, g_lianasPosX[5], platSuperior, nivelAgua, colorOscuro, colorClaro);
 
-    // Columna 6: Liana normal/media
-    DibujarLianaSegmento(hdc, g_lianasPosX[6], platSuperior + 60, nivelAgua, colorOscuro, colorClaro);
+    // Columna 6: Liana completa (RUTA AL OBJETIVO - cambiada de media a completa)
+    // ANTES: platSuperior + 60 (solo mitad inferior)
+    // AHORA: platSuperior (completa desde arriba) para permitir alcanzar liana 7
+    DibujarLianaSegmento(hdc, g_lianasPosX[6], platSuperior, nivelAgua, colorOscuro, colorClaro);
 
     // Columna 7: Liana de victoria - parte superior (sube hacia Donkey Kong)
     DibujarLianaSegmento(hdc, g_lianasPosX[7], g_donkeyPosY + 50, platSuperior, colorOscuro, colorClaro);

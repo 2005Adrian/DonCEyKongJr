@@ -1,6 +1,7 @@
 package cr.tec.donceykongjr.server.logic;
 
 import cr.tec.donceykongjr.server.logic.entidades.*;
+import cr.tec.donceykongjr.server.logic.patrones.FactoryEntidad;
 import cr.tec.donceykongjr.server.util.LoggerUtil;
 
 import java.util.*;
@@ -166,7 +167,8 @@ public class MotorCocodrilos {
         // Encolar comando de creación (thread-safe)
         colaComandos.offer(() -> {
             try {
-                CocodriloRojo cocodrilo = new CocodriloRojo(
+                // Usar Factory para crear cocodrilos (patrón Factory Method)
+                CocodriloRojo cocodrilo = FactoryEntidad.crearCocodriloRojo(
                         id, lianaId, yInicial, velocidadBase, direccion,
                         liana.getAlturaMin(), liana.getAlturaMax()
                 );
@@ -203,7 +205,8 @@ public class MotorCocodrilos {
         // Encolar comando de creación (thread-safe)
         colaComandos.offer(() -> {
             try {
-                CocodriloAzul cocodrilo = new CocodriloAzul(
+                // Usar Factory para crear cocodrilos (patrón Factory Method)
+                CocodriloAzul cocodrilo = FactoryEntidad.crearCocodriloAzul(
                         id, lianaId, yInicial, velocidadBase,
                         liana.getAlturaMax() // Límite inferior = alturaMax de liana
                 );

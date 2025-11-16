@@ -32,18 +32,34 @@ public class Config {
     /** Coordenadas y fisica del jugador */
     public static final double JUGADOR_Y_MIN = 0.0;
     public static final double JUGADOR_Y_MAX = 500.0;
-    public static final double JUGADOR_VEL_HORIZONTAL = 6.0;
+
+    // Nivel del agua (peligro mortal)
+    public static final double NIVEL_AGUA = 485.0;              // Por debajo de esto es suelo seguro
+    public static final double ALTURA_SUELO = 475.0;            // Altura de la plataforma de suelo inferior
+
+    // Velocidades y aceleración horizontal (MEJORADO)
+    public static final double JUGADOR_VEL_HORIZONTAL_MAX = 1.5;      // Velocidad máxima horizontal (caminar suave, no saltar bloques)
+    public static final double JUGADOR_ACELERACION_HORIZONTAL = 12.0; // Aceleración gradual en unidades/s²
+    public static final double JUGADOR_FRICCION = 10.0;               // Desaceleración al soltar tecla
+    public static final double JUGADOR_CONTROL_AEREO_MULT = 0.6;      // Control horizontal en el aire (60% del normal)
+
+    // Velocidades verticales
     public static final double JUGADOR_VEL_LIANA = 180.0;
-    public static final double JUGADOR_VEL_SALTO = 260.0;
+    public static final double JUGADOR_VEL_SALTO = 220.0;             // Velocidad inicial salto (reducida de 260.0)
     public static final double JUGADOR_VEL_SALTO_LIANA = 220.0;
     public static final double JUGADOR_GRAVEDAD = 520.0;
+
+    // Mecánicas de agarre y colisión
     public static final double JUGADOR_DISTANCIA_ENGANCHE = 0.35;
     public static final double JUGADOR_GRAB_BUFFER = 0.30;
+    public static final double JUGADOR_CAMBIO_LIANA_COOLDOWN = 0.25; // Cooldown entre cambios de liana (250ms)
     public static final double JUGADOR_DELTA_Y_COCODRILO = 30.0;
     public static final double JUGADOR_DELTA_Y_FRUTA = 24.0;
     public static final double JUGADOR_TIEMPO_CELEBRACION = 1.5;
-    public static final double JUGADOR_SPAWN_Y = 480.0;  // Cerca del agua (parte inferior)
-    public static final int JUGADOR_SPAWN_LIANA = 1;     // Columna 1 (segunda liana)
+
+    // Spawn inicial
+    public static final double JUGADOR_SPAWN_Y = ALTURA_SUELO;  // En el suelo seguro (475.0)
+    public static final int JUGADOR_SPAWN_LIANA = 1;            // Columna 1 (segunda liana)
     public static final double JUGADOR_SPAWN_X = JUGADOR_SPAWN_LIANA;
 
     /** Reglas de objetivo/rescate - Columna 7 (plataforma de victoria) */

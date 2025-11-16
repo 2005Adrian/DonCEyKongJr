@@ -15,14 +15,23 @@ typedef struct {
     int height;
 } Sprite;
 
+// Animación multi-frame (para caminar)
+typedef struct {
+    Sprite frames[3];    // 3 frames de animación
+    int frameCount;      // Número de frames válidos (puede ser 1-3)
+} SpriteAnimation;
+
 // Animaciones de Jr (diferentes sprites según acción)
 typedef struct {
-    Sprite frente;       // Parado de frente
-    Sprite subiendo;     // Subiendo por liana
-    Sprite bajando;      // Bajando por liana
-    Sprite izquierda;    // Moviéndose a la izquierda
-    Sprite derecha;      // Moviéndose a la derecha
-    Sprite saltando;     // Saltando/colgado
+    Sprite frente;                    // Parado de frente
+    Sprite subiendo;                  // Subiendo por liana
+    Sprite bajando;                   // Bajando por liana
+    SpriteAnimation caminandoIzq;     // Animación caminando izquierda (3 frames)
+    SpriteAnimation caminandoDer;     // Animación caminando derecha (3 frames)
+    Sprite saltando;                  // Saltando/colgado
+    // Compatibilidad con código anterior
+    Sprite izquierda;                 // Fallback: primer frame de caminandoIzq
+    Sprite derecha;                   // Fallback: primer frame de caminandoDer
 } SpritesJr;
 
 // Sprites del juego
@@ -41,5 +50,9 @@ void dibujarSpriteEscalado(HDC hdc, Sprite* sprite, int x, int y, int width, int
 
 // Función para obtener el sprite correcto de Jr según su estado
 Sprite* obtenerSpriteJr(const char* estado, const char* facing, double velocidadY, double velocidadX);
+
+// Funciones de animación
+void actualizarAnimaciones(double deltaTime);
+Sprite* obtenerFrameAnimacion(SpriteAnimation* anim, int frameIndex);
 
 #endif // SPRITES_H

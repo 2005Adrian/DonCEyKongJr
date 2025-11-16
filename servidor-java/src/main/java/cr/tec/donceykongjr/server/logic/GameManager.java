@@ -58,19 +58,27 @@ public class GameManager extends Subject {
      * Inicializa las lianas del juego con rangos de altura específicos.
      * Diseño de 8 columnas según el mapa del nivel:
      * - Columna 0: Liana completa desde arriba hasta abajo
-     * - Columna 1: Liana completa con isla de tierra abajo
+     * - Columna 1: Liana completa con spawn del jugador
      * - Columna 2: Lianas por secciones (media altura hacia abajo)
      * - Columna 3: Liana hasta mitad del mapa
      * - Columna 4: Liana corta en la parte inferior
      * - Columna 5: Liana larga completa
-     * - Columna 6: Liana normal/media
-     * - Columna 7: Liana de victoria (parte superior)
+     * - Columna 6: Liana completa (RUTA AL OBJETIVO)
+     * - Columna 7: Liana de victoria (parte superior - OBJETIVO)
+     *
+     * RUTA PARA GANAR:
+     * 1. Spawn en liana 1 (Y=475)
+     * 2. Subir por liana 1
+     * 3. Moverse horizontalmente a lianas vecinas (0,2,3,4,5,6)
+     * 4. Llegar a liana 6 y subir hasta Y<=60
+     * 5. Cambiar a liana 7 (debe estar en rango 0-100)
+     * 6. ¡VICTORIA al llegar a Y<=60 en liana 7!
      */
     private void inicializarLianas() {
         // Columna 0: Liana completa (0-500)
         lianas.add(new Liana("L_0", 0, 0, 0, 0.0, 500.0));
 
-        // Columna 1: Liana completa (0-500)
+        // Columna 1: Liana completa (0-500) - SPAWN AQUÍ
         lianas.add(new Liana("L_1", 0, 0, 1, 0.0, 500.0));
 
         // Columna 2: Liana desde media altura (250-500)
@@ -85,10 +93,11 @@ public class GameManager extends Subject {
         // Columna 5: Liana larga completa (0-500)
         lianas.add(new Liana("L_5", 0, 0, 5, 0.0, 500.0));
 
-        // Columna 6: Liana media (150-500)
-        lianas.add(new Liana("L_6", 0, 0, 6, 150.0, 500.0));
+        // Columna 6: Liana completa (0-500) - RUTA AL OBJETIVO
+        // CAMBIADO de (150-500) a (0-500) para permitir alcanzar la liana 7
+        lianas.add(new Liana("L_6", 0, 0, 6, 0.0, 500.0));
 
-        // Columna 7: Liana de victoria - parte superior (0-100)
+        // Columna 7: Liana de victoria - parte superior (0-100) - OBJETIVO
         lianas.add(new Liana("L_7", 0, 0, 7, 0.0, 100.0));
 
         // Registrar todas las lianas en el motor de cocodrilos
@@ -177,9 +186,11 @@ public class GameManager extends Subject {
         cocodrilos.clear();
 
         // Convertir snapshots a instancias de Cocodrilo para colisiones
+        // NOTA: Se usan constructores legacy porque los snapshots no contienen
+        // todos los parámetros necesarios (alturaMin/Max, limiteInferior).
+        // Estas instancias son temporales solo para detección de colisiones.
         for (SnapshotCocodrilo snap : snapshot.getCocodrilos()) {
             if (snap.isActivo()) {
-                // Crear instancia temporal para detección de colisiones
                 Cocodrilo temp;
                 if (snap.getTipo() == Cocodrilo.TipoCocodrilo.ROJO) {
                     temp = new CocodriloRojo(snap.getId(), 0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
@@ -252,13 +263,20 @@ public class GameManager extends Subject {
     }
 
     /**
-     * Detecta si algun jugador salio de los limites verticales permitidos.
+     * Detecta si algun jugador salio de los limites verticales permitidos o cayo al agua.
      */
     private void detectarCaidaAbismo() {
         for (Jugador jugador : jugadores.values()) {
             if (!jugador.isActivo() || jugador.estaCelebrando()) continue;
+
+            // Caída al cielo (arriba del mapa)
             if (jugador.getY() < Config.JUGADOR_Y_MIN) {
                 manejarGolpeJugador(jugador, "ABYSS");
+            }
+
+            // Caída al agua (debajo del nivel seguro)
+            if (jugador.getY() >= Config.NIVEL_AGUA) {
+                manejarGolpeJugador(jugador, "WATER");
             }
         }
     }
