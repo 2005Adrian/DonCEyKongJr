@@ -39,6 +39,9 @@ void marcarTeclaSoltada(WPARAM wParam);
 // Procesa y envía inputs acumulados al servidor (llamar cada frame)
 void procesarInputsAcumulados(void);
 
+// Limpia todos los estados de teclas presionadas (útil al reiniciar nivel)
+void limpiarEstadoTeclas(void);
+
 // Procesa teclas presionadas (legacy - mantener compatibilidad)
 void procesarTecla(WPARAM wParam);
 

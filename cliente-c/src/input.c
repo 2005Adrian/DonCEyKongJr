@@ -19,6 +19,12 @@ void limpiarRecursosInput(void) {
     DeleteCriticalSection(&g_inputLock);
 }
 
+void limpiarEstadoTeclas(void) {
+    EnterCriticalSection(&g_inputLock);
+    memset(&g_teclas, 0, sizeof(EstadoTeclas));
+    LeaveCriticalSection(&g_inputLock);
+}
+
 void marcarTeclaPresionada(WPARAM wParam) {
     EnterCriticalSection(&g_inputLock);
 

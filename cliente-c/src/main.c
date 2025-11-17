@@ -112,7 +112,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         g_threadRed = CreateThread(NULL, 0, ThreadRed, NULL, 0, NULL);
         SetTimer(g_hwnd, 1, 33, NULL); // Timer 1: 30 FPS rendering
-        SetTimer(g_hwnd, 2, 50, NULL); // Timer 2: 20 Hz input (sincronizado con servidor)
+        SetTimer(g_hwnd, 2, 40, NULL); // Timer 2: 25 Hz input (más rápido que server 20 TPS para no perder inputs)
         client_log("Conexion establecida, juego iniciado");
     } else {
         g_estadoPantalla = ESTADO_DESCONECTADO;
@@ -222,7 +222,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (g_efectoFruta > 0) g_efectoFruta--;
                 InvalidateRect(hwnd, NULL, FALSE);
             } else if (wParam == 2) {
-                // Timer 2: Input polling a 20 Hz (sincronizado con servidor)
+                // Timer 2: Input polling a 25 Hz (más rápido que server 20 TPS para no perder inputs)
                 if (g_estadoPantalla == ESTADO_JUGANDO && g_conectado) {
                     procesarInputsAcumulados();
                 }

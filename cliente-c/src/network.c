@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "structs.h"
 #include "log_utils.h"
+#include "input.h"
 
 #define EFECTO_GOLPE_FRAMES 24
 #define EFECTO_FRUTA_FRAMES 18
@@ -81,8 +82,10 @@ static void procesarEventoJSON(const char* json) {
         g_efectoFruta = EFECTO_FRUTA_FRAMES;
     } else if (strcmp(nombre, "PLAYER_ELIMINATED") == 0) {
         g_estadoPantalla = ESTADO_GAME_OVER;
+        limpiarEstadoTeclas(); // Limpiar inputs al morir
     } else if (strcmp(nombre, "PLAYER_WIN") == 0) {
         g_estadoPantalla = ESTADO_VICTORIA;
+        limpiarEstadoTeclas(); // Limpiar inputs al ganar
     } else {
         client_log("evento desconocido: %s", nombre);
     }
@@ -373,7 +376,8 @@ void parsearEstadoJSON(const char* json) {
         for (int i = 0; i < g_estadoActual.numJugadores; i++) {
             if (g_estadoActual.jugadores[i].active && !g_estadoActual.jugadores[i].celebrating) {
                 g_estadoPantalla = ESTADO_JUGANDO;
-                client_log("reinicio detectado - volviendo a ESTADO_JUGANDO");
+                limpiarEstadoTeclas(); // Limpiar teclas "pegadas" del nivel anterior
+                client_log("reinicio detectado - volviendo a ESTADO_JUGANDO y limpiando inputs");
                 break;
             }
         }

@@ -37,10 +37,10 @@ public class Config {
     public static final double NIVEL_AGUA = 485.0;              // Por debajo de esto es suelo seguro
     public static final double ALTURA_SUELO = 475.0;            // Altura de la plataforma de suelo inferior
 
-    // Velocidades y aceleración horizontal (MEJORADO)
-    public static final double JUGADOR_VEL_HORIZONTAL_MAX = 1.5;      // Velocidad máxima horizontal (caminar suave, no saltar bloques)
-    public static final double JUGADOR_ACELERACION_HORIZONTAL = 12.0; // Aceleración gradual en unidades/s²
-    public static final double JUGADOR_FRICCION = 10.0;               // Desaceleración al soltar tecla
+    // Velocidades y aceleración horizontal (BALANCEADO PARA ALTA DIFICULTAD)
+    public static final double JUGADOR_VEL_HORIZONTAL_MAX = 1.2;      // Velocidad máxima horizontal (reducida para mejor control)
+    public static final double JUGADOR_ACELERACION_HORIZONTAL = 8.0;  // Aceleración más suave para control preciso
+    public static final double JUGADOR_FRICCION = 15.0;               // Mayor fricción para mejor capacidad de frenado
     public static final double JUGADOR_CONTROL_AEREO_MULT = 0.6;      // Control horizontal en el aire (60% del normal)
 
     // Velocidades verticales
