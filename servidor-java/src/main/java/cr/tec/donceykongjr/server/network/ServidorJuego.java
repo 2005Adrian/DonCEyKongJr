@@ -5,6 +5,7 @@ import cr.tec.donceykongjr.server.util.Config;
 import cr.tec.donceykongjr.server.util.LoggerUtil;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -46,7 +47,15 @@ public class ServidorJuego {
             while (enEjecucion) {
                 Socket cliente = serverSocket.accept();
                 LoggerUtil.info("cliente conectado desde " + cliente.getInetAddress().getHostAddress());
-                
+
+                // Validación temprana de espacio disponible
+                if (!gameManager.tieneEspacio()) {
+                    LoggerUtil.warning("servidor lleno - rechazando conexión");
+                    enviarMensajeRechazo(cliente, "Servidor lleno: máximo 1 jugador + 1 espectador");
+                    cliente.close();
+                    continue;
+                }
+
                 ManejadorCliente manejador = new ManejadorCliente(cliente, gameManager);
                 executorService.submit(manejador);
             }
@@ -54,6 +63,20 @@ public class ServidorJuego {
             if (enEjecucion) {
                 LoggerUtil.error("error al aceptar conexiones: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Envía un mensaje de rechazo al cliente y cierra la conexión.
+     */
+    private void enviarMensajeRechazo(Socket cliente, String mensaje) {
+        try {
+            PrintWriter salida = new PrintWriter(cliente.getOutputStream(), true);
+            String json = "{\"type\":\"ERROR\",\"message\":\"" + mensaje + "\"}";
+            salida.println(json);
+            salida.flush();
+        } catch (IOException e) {
+            LoggerUtil.error("error al enviar mensaje de rechazo: " + e.getMessage());
         }
     }
     

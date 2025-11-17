@@ -17,6 +17,9 @@
 
 static int g_logEstados = 0;
 
+// Variable global para tipo de cliente (inicializada en main.c)
+char g_tipoCliente[16] = CLIENT_TYPE_PLAYER;
+
 // Mutex para proteger acceso a g_estadoActual
 static CRITICAL_SECTION g_estadoLock;
 static BOOL g_estadoLockInicializado = FALSE;
@@ -150,8 +153,9 @@ int enviarMensaje(const char* json) {
 }
 
 char* crearMensajeConexion() {
-    char* msg = (char*)malloc(256);
-    sprintf(msg, "{\"type\":\"CONNECT\",\"id\":\"%s\",\"playerId\":\"%s\"}", g_miPlayerId, g_miPlayerId);
+    char* msg = (char*)malloc(512);
+    sprintf(msg, "{\"type\":\"CONNECT\",\"id\":\"%s\",\"playerId\":\"%s\",\"clientType\":\"%s\"}",
+            g_miPlayerId, g_miPlayerId, g_tipoCliente);
     return msg;
 }
 

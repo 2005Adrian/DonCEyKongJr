@@ -14,6 +14,16 @@ import java.util.Map;
  * Implementa Observer para recibir actualizaciones del GameManager.
  */
 public class ManejadorCliente implements Runnable, Observer {
+
+    /**
+     * Tipo de cliente conectado.
+     */
+    private enum TipoCliente {
+        PLAYER,      // Jugador activo que puede enviar inputs
+        SPECTATOR,   // Espectador que solo recibe estado
+        UNDEFINED    // No se ha determinado el tipo
+    }
+
     private Socket socket;
     private GameManager gameManager;
     private BufferedReader entrada;
@@ -21,7 +31,7 @@ public class ManejadorCliente implements Runnable, Observer {
     private final Object salidaLock = new Object();
     private String jugadorId;
     private boolean conectado;
-    private boolean esJugador;
+    private TipoCliente tipoCliente;
     
     /**
      * Constructor del manejador de cliente.
@@ -30,7 +40,7 @@ public class ManejadorCliente implements Runnable, Observer {
         this.socket = socket;
         this.gameManager = gameManager;
         this.conectado = true;
-        this.esJugador = false;
+        this.tipoCliente = TipoCliente.UNDEFINED;
     }
     
     @Override
@@ -89,33 +99,96 @@ public class ManejadorCliente implements Runnable, Observer {
     
     /**
      * Maneja la conexión de un nuevo cliente.
+     * Determina si el cliente es jugador o espectador según el campo clientType.
+     * Si no se especifica clientType, se asume "PLAYER" por compatibilidad.
      */
     private void manejarConexion(Mensaje mensaje) {
-        if (mensaje.getId() != null) {
-            jugadorId = mensaje.getId();
-            // Intentar agregar como jugador
-            if (gameManager.agregarJugador(jugadorId, 0, 5, 0)) {
-                esJugador = true;
-                LoggerUtil.info("jugador " + jugadorId + " registrado");
-                enviarEstado();
-            } else {
-                // Si no se pudo agregar como jugador, es espectador
-                esJugador = false;
-                LoggerUtil.info("cliente " + jugadorId + " conectado como espectador");
-                enviarEstado();
-            }
+        if (mensaje.getId() == null) {
+            enviarError("ID de cliente requerido");
+            desconectar();
+            return;
+        }
+
+        jugadorId = mensaje.getId();
+
+        // Extraer tipo de cliente del mensaje (default: PLAYER)
+        String clientTypeStr = mensaje.getClientType();
+        if (clientTypeStr == null || clientTypeStr.isEmpty()) {
+            clientTypeStr = "PLAYER";  // Compatibilidad con clientes antiguos
+        }
+
+        // Procesar según tipo de cliente
+        if ("PLAYER".equalsIgnoreCase(clientTypeStr)) {
+            manejarConexionJugador();
+        } else if ("SPECTATOR".equalsIgnoreCase(clientTypeStr)) {
+            manejarConexionEspectador();
+        } else {
+            enviarError("Tipo de cliente inválido: " + clientTypeStr);
+            desconectar();
+        }
+    }
+
+    /**
+     * Procesa la conexión de un jugador.
+     */
+    private void manejarConexionJugador() {
+        boolean agregado = gameManager.agregarJugador(jugadorId, 0, 5, 0);
+
+        if (agregado) {
+            tipoCliente = TipoCliente.PLAYER;
+            LoggerUtil.info("jugador " + jugadorId + " registrado exitosamente");
+            enviarEstado();
+        } else {
+            enviarError("No se puede conectar como jugador: límite alcanzado (máximo " +
+                       gameManager.contarJugadoresActivos() + " jugador)");
+            LoggerUtil.warning("conexión de jugador " + jugadorId + " rechazada: límite alcanzado");
+            desconectar();
+        }
+    }
+
+    /**
+     * Procesa la conexión de un espectador.
+     */
+    private void manejarConexionEspectador() {
+        // Verificar que haya al menos un jugador activo
+        if (!gameManager.hayJugadorActivo()) {
+            enviarError("No hay partidas activas para observar");
+            LoggerUtil.warning("espectador " + jugadorId + " rechazado: no hay jugadores activos");
+            desconectar();
+            return;
+        }
+
+        // Intentar registrar como espectador
+        boolean registrado = gameManager.registrarEspectador(jugadorId);
+
+        if (registrado) {
+            tipoCliente = TipoCliente.SPECTATOR;
+            LoggerUtil.info("espectador " + jugadorId + " conectado exitosamente");
+            enviarEstado();
+        } else {
+            enviarError("No se puede conectar como espectador: límite alcanzado");
+            LoggerUtil.warning("conexión de espectador " + jugadorId + " rechazada: límite alcanzado");
+            desconectar();
         }
     }
     
     /**
      * Maneja el input de un jugador.
+     * Los espectadores NO pueden enviar inputs.
      */
     private void manejarInput(Mensaje mensaje) {
-        if (!esJugador || jugadorId == null) {
-            enviarError("No eres un jugador registrado");
+        // Verificar que sea un jugador
+        if (tipoCliente != TipoCliente.PLAYER) {
+            enviarError("Los espectadores no pueden enviar inputs");
+            LoggerUtil.warning("espectador " + jugadorId + " intentó enviar input (rechazado)");
             return;
         }
-        
+
+        if (jugadorId == null) {
+            enviarError("Cliente no identificado");
+            return;
+        }
+
         String accion = mensaje.getAction();
         if (accion != null) {
             gameManager.procesarInput(jugadorId, accion);
@@ -144,14 +217,22 @@ public class ManejadorCliente implements Runnable, Observer {
      */
     private void desconectar() {
         conectado = false;
-        
-        if (jugadorId != null && esJugador) {
-            gameManager.eliminarJugador(jugadorId);
-            LoggerUtil.info("jugador " + jugadorId + " desconectado");
+
+        // Eliminar del GameManager según tipo
+        if (jugadorId != null) {
+            if (tipoCliente == TipoCliente.PLAYER) {
+                gameManager.eliminarJugador(jugadorId);
+                LoggerUtil.info("jugador " + jugadorId + " desconectado");
+            } else if (tipoCliente == TipoCliente.SPECTATOR) {
+                gameManager.eliminarEspectador(jugadorId);
+                LoggerUtil.info("espectador " + jugadorId + " desconectado");
+            }
         }
-        
+
+        // Eliminar como observador
         gameManager.eliminarObservador(this);
-        
+
+        // Cerrar socket
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();

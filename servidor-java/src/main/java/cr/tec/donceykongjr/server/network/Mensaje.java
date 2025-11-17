@@ -20,6 +20,7 @@ public class Mensaje {
     private String id;
     private String action;
     private String name;
+    private String clientType;  // "PLAYER" o "SPECTATOR"
     private Object payload;
     private Map<String, Object> data;
     
@@ -99,9 +100,17 @@ public class Mensaje {
     public Map<String, Object> getData() {
         return data;
     }
-    
+
     public void setData(Map<String, Object> data) {
         this.data = data;
+    }
+
+    public String getClientType() {
+        return clientType;
+    }
+
+    public void setClientType(String clientType) {
+        this.clientType = clientType;
     }
 }
 

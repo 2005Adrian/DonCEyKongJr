@@ -6,6 +6,10 @@
 #define SERVER_PORT 5555
 #define BUFFER_SIZE 8192
 
+// Tipos de cliente
+#define CLIENT_TYPE_PLAYER "PLAYER"
+#define CLIENT_TYPE_SPECTATOR "SPECTATOR"
+
 // Constantes del juego
 #define MAX_LIANAS 8
 #define MAX_COCODRILOS 50

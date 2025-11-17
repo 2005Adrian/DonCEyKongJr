@@ -3,6 +3,9 @@
 
 #include <winsock2.h>
 
+// Variable global para tipo de cliente (debe ser inicializada en main.c)
+extern char g_tipoCliente[16];
+
 // Funciones de red
 int conectarServidor();
 void desconectarServidor();

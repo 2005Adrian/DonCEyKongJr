@@ -9,10 +9,10 @@ public class Config {
     public static final int PUERTO_DEFAULT = 5555;
 
     /** Maximo numero de jugadores simultaneos */
-    public static final int MAX_JUGADORES = 2;
+    public static final int MAX_JUGADORES = 1;
 
     /** Maximo numero de espectadores por jugador */
-    public static final int MAX_ESPECTADORES_POR_JUGADOR = 2;
+    public static final int MAX_ESPECTADORES_POR_JUGADOR = 1;
 
     /** Ticks por segundo del juego (FPS del servidor) */
     public static final int TICKS_POR_SEGUNDO = 20;

@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GameManager extends Subject {
     private Map<String, Jugador> jugadores;
+    private Set<String> espectadores;
     private List<Cocodrilo> cocodrilos;
     private List<Fruta> frutas;
     private List<Liana> lianas;
@@ -34,6 +35,7 @@ public class GameManager extends Subject {
      */
     public GameManager() {
         this.jugadores = new ConcurrentHashMap<>();
+        this.espectadores = ConcurrentHashMap.newKeySet();
         this.cocodrilos = new ArrayList<>();
         this.frutas = new ArrayList<>();
         this.lianas = new ArrayList<>();
@@ -696,6 +698,88 @@ public class GameManager extends Subject {
 
     public long getTickActual() {
         return tickActual;
+    }
+
+    // ========== GESTIÓN DE ESPECTADORES ==========
+
+    /**
+     * Registra un espectador en el sistema.
+     * Los espectadores reciben actualizaciones del estado del juego pero no pueden enviar inputs.
+     *
+     * @param id Identificador único del espectador
+     * @return true si se registró exitosamente, false si ya existe el límite de espectadores
+     */
+    public synchronized boolean registrarEspectador(String id) {
+        if (espectadores.size() >= Config.MAX_ESPECTADORES_POR_JUGADOR) {
+            LoggerUtil.warning("no se puede registrar espectador " + id + ": límite alcanzado");
+            return false;
+        }
+
+        if (espectadores.contains(id)) {
+            LoggerUtil.warning("espectador " + id + " ya existe");
+            return false;
+        }
+
+        espectadores.add(id);
+        LoggerUtil.info("espectador " + id + " registrado exitosamente");
+        return true;
+    }
+
+    /**
+     * Elimina un espectador del sistema.
+     *
+     * @param id Identificador del espectador a eliminar
+     */
+    public synchronized void eliminarEspectador(String id) {
+        if (espectadores.remove(id)) {
+            LoggerUtil.info("espectador " + id + " eliminado del sistema");
+        }
+    }
+
+    /**
+     * Verifica si hay espacio disponible para nuevos clientes.
+     * Se considera espacio disponible si:
+     * - No se ha alcanzado el máximo de jugadores, O
+     * - No se ha alcanzado el máximo de espectadores
+     *
+     * @return true si hay espacio disponible
+     */
+    public synchronized boolean tieneEspacio() {
+        int jugadoresActivos = contarJugadoresActivos();
+        int espectadoresActivos = contarEspectadores();
+
+        boolean espacioJugadores = jugadoresActivos < Config.MAX_JUGADORES;
+        boolean espacioEspectadores = espectadoresActivos < Config.MAX_ESPECTADORES_POR_JUGADOR;
+
+        return espacioJugadores || espacioEspectadores;
+    }
+
+    /**
+     * Cuenta el número de jugadores activos en el sistema.
+     *
+     * @return Número de jugadores activos
+     */
+    public synchronized int contarJugadoresActivos() {
+        return jugadores.size();
+    }
+
+    /**
+     * Cuenta el número de espectadores activos en el sistema.
+     *
+     * @return Número de espectadores activos
+     */
+    public synchronized int contarEspectadores() {
+        return espectadores.size();
+    }
+
+    /**
+     * Verifica si existe al menos un jugador activo.
+     * Útil para validar si un espectador puede conectarse.
+     *
+     * @return true si hay al menos un jugador
+     */
+    public synchronized boolean hayJugadorActivo() {
+        return !jugadores.isEmpty();
     }
 }
 

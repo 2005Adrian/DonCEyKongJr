@@ -28,9 +28,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     client_log("WinMain iniciado");
     SetUnhandledExceptionFilter(ClientUnhandledException);
-    // Generar ID único para el jugador
+
+    // Detectar modo espectador desde argumentos de línea de comandos
+    if (lpCmdLine != NULL && strstr(lpCmdLine, "--spectator") != NULL) {
+        strcpy(g_tipoCliente, CLIENT_TYPE_SPECTATOR);
+        client_log("Modo ESPECTADOR activado");
+    } else {
+        strcpy(g_tipoCliente, CLIENT_TYPE_PLAYER);
+        client_log("Modo JUGADOR activado");
+    }
+
+    // Generar ID único para el cliente
     srand(time(NULL));
-    sprintf(g_miPlayerId, "Player_%d", rand() % 10000);
+    if (strcmp(g_tipoCliente, CLIENT_TYPE_SPECTATOR) == 0) {
+        sprintf(g_miPlayerId, "Spectator_%d", rand() % 10000);
+    } else {
+        sprintf(g_miPlayerId, "Player_%d", rand() % 10000);
+    }
 
     // Inicializar estado del juego
     memset(&g_estadoActual, 0, sizeof(EstadoActual));
@@ -54,11 +68,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    // Crear ventana
+    // Crear ventana con título según el modo
+    char tituloVentana[128];
+    if (strcmp(g_tipoCliente, CLIENT_TYPE_SPECTATOR) == 0) {
+        sprintf(tituloVentana, "DonCEy Kong Jr - ESPECTADOR");
+    } else {
+        sprintf(tituloVentana, "DonCEy Kong Jr - JUGADOR");
+    }
+
     g_hwnd = CreateWindowEx(
         WS_EX_CLIENTEDGE,
         "DonCEyKongJrWindow",
-        "DonCEy Kong Jr - El Juego Completo",
+        tituloVentana,
         WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,
         CW_USEDEFAULT, CW_USEDEFAULT,
         WINDOW_WIDTH, WINDOW_HEIGHT,
