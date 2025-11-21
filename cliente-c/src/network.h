@@ -6,6 +6,9 @@
 // Variable global para tipo de cliente (debe ser inicializada en main.c)
 extern char g_tipoCliente[16];
 
+// Variable global para puerto del servidor
+extern int g_serverPort;
+
 // Funciones de red
 int conectarServidor();
 void desconectarServidor();

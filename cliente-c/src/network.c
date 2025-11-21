@@ -21,6 +21,9 @@ static int g_logEstados = 0;
 // Variable global para tipo de cliente (inicializada en main.c)
 char g_tipoCliente[16] = CLIENT_TYPE_PLAYER;
 
+// Variable global para puerto del servidor (inicializada en main.c)
+int g_serverPort = SERVER_PORT;
+
 // Mutex para proteger acceso a g_estadoActual
 static CRITICAL_SECTION g_estadoLock;
 static BOOL g_estadoLockInicializado = FALSE;
@@ -117,8 +120,9 @@ int conectarServidor() {
     setsockopt(g_sockCliente, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
 
     server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_PORT);
+    server.sin_port = htons(g_serverPort);
     inet_pton(AF_INET, SERVER_IP, &server.sin_addr);
+    client_log("Conectando a %s:%d", SERVER_IP, g_serverPort);
 
     if (connect(g_sockCliente, (struct sockaddr*)&server, sizeof(server)) < 0) {
         closesocket(g_sockCliente);

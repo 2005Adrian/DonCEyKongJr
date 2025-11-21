@@ -38,6 +38,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         client_log("Modo JUGADOR activado");
     }
 
+    // Detectar puerto desde argumentos (--port XXXX)
+    if (lpCmdLine != NULL) {
+        char* portArg = strstr(lpCmdLine, "--port");
+        if (portArg != NULL) {
+            int puerto = atoi(portArg + 7);
+            if (puerto > 0 && puerto < 65536) {
+                g_serverPort = puerto;
+                client_log("Puerto configurado: %d", g_serverPort);
+            }
+        }
+    }
+
     // Generar ID único para el cliente
     srand(time(NULL));
     if (strcmp(g_tipoCliente, CLIENT_TYPE_SPECTATOR) == 0) {

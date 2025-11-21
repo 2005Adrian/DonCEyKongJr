@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>DonCEyKongJr - Launcher</title>
+    <HTA:APPLICATION
+        ID="DonCEyKongJr"
+        APPLICATIONNAME="DonCEyKongJr Launcher"
+        BORDER="dialog"
+        BORDERSTYLE="normal"
+        CAPTION="yes"
+        MAXIMIZEBUTTON="no"
+        MINIMIZEBUTTON="yes"
+        SCROLL="no"
+        SINGLEINSTANCE="yes"
+        SYSMENU="yes"
+        WINDOWSTATE="normal"
+    />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 48px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #74b9ff;
+            margin-bottom: 25px;
+            letter-spacing: 5px;
+        }
+
+        .section {
+            background-color: #2d3436;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 8px;
+        }
+
+        .partidas-lista {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #1a1a2e;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .partida-item {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 15px;
+        }
+
+        .partida-item:hover {
+            background-color: #74b9ff;
+        }
+
+        .partida-item .puerto {
+            float: right;
+            color: #ffeaa7;
+            font-weight: bold;
+        }
+
+        .partida-btns {
+            float: right;
+            margin-left: 10px;
+        }
+
+        .partida-btns button {
+            padding: 5px 10px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-unirse {
+            background-color: #00b894;
+            color: white;
+        }
+
+        .btn-observar {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        .btn-unirse:hover { background-color: #00d9a5; }
+        .btn-observar:hover { background-color: #a29bfe; }
+
+        .no-partidas {
+            color: #636e72;
+            font-style: italic;
+            padding: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .menu {
+            width: 100%;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px 25px;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 10px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            padding-left: 30px;
+        }
+
+        .btn-play { background-color: #00b894; border-left: 6px solid #00ff88; }
+        .btn-spectator { background-color: #6c5ce7; border-left: 6px solid #a29bfe; }
+        .btn-new { background-color: #e17055; border-left: 6px solid #fdcb6e; }
+        .btn-refresh { background-color: #0984e3; border-left: 6px solid #74b9ff; }
+        .btn-exit { background-color: #c0392b; border-left: 6px solid #e74c3c; }
+
+        .btn-icon {
+            display: inline-block;
+            width: 35px;
+            font-size: 22px;
+            vertical-align: middle;
+        }
+
+        .btn-text {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .btn-desc {
+            font-size: 11px;
+            font-weight: normal;
+            color: #ddd;
+            margin-top: 3px;
+        }
+
+        .btn-row {
+            margin-bottom: 15px;
+        }
+
+        .btn-small {
+            display: inline-block;
+            width: 48%;
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .btn-small:first-child {
+            margin-right: 2%;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2d3436;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #74b9ff;
+        }
+
+        .status-error { color: #ff7675; background-color: #4a1a1a; }
+        .status-success { color: #55efc4; background-color: #1a4a2e; }
+        .status-loading { color: #ffeaa7; }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #636e72;
+        }
+
+        .footer span { color: #ffd700; }
+    </style>
+    <script>
+        var shell = new ActiveXObject("WScript.Shell");
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var basePath = "";
+        var partidasActivas = [];
+        var procesosAbiertos = [];
+        var PUERTO_BASE = 5555;
+
+        function init() {
+            var fullPath = document.location.pathname;
+            if (fullPath.charAt(0) == '/') fullPath = fullPath.substring(1);
+            basePath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1).replace(/\//g, '\\');
+
+            window.resizeTo(650, 780);
+            window.moveTo((screen.width - 650) / 2, (screen.height - 780) / 2);
+
+            actualizarPartidas();
+            setStatus("Listo - Selecciona o crea una partida", "");
+        }
+
+        function setStatus(msg, type) {
+            var status = document.getElementById("status");
+            status.innerHTML = msg;
+            status.className = "status";
+            if (type == "error") status.className = "status status-error";
+            if (type == "success") status.className = "status status-success";
+            if (type == "loading") status.className = "status status-loading";
+        }
+
+        function clienteExiste() {
+            return fso.FileExists(basePath + "cliente-c\\build\\DonCEyKongJr-Client.exe");
+        }
+
+        function puertoActivo(puerto) {
+            var ret = shell.Run('cmd /c "netstat -an | findstr :' + puerto + ' | findstr LISTENING >nul 2>&1"', 0, true);
+            return ret == 0;
+        }
+
+        function buscarPuertosActivos() {
+            var puertos = [];
+            for (var p = PUERTO_BASE; p < PUERTO_BASE + 10; p++) {
+                if (puertoActivo(p)) {
+                    puertos.push(p);
+                }
+            }
+            return puertos;
+        }
+
+        function siguientePuertoDisponible() {
+            for (var p = PUERTO_BASE; p < PUERTO_BASE + 10; p++) {
+                if (!puertoActivo(p)) {
+                    return p;
+                }
+            }
+            return PUERTO_BASE + 10;
+        }
+
+        function actualizarPartidas() {
+            partidasActivas = buscarPuertosActivos();
+            var lista = document.getElementById("partidas-lista");
+
+            if (partidasActivas.length == 0) {
+                lista.innerHTML = '<div class="no-partidas">No hay partidas activas<br><br>Crea una nueva partida para comenzar</div>';
+            } else {
+                var html = '';
+                for (var i = 0; i < partidasActivas.length; i++) {
+                    var puerto = partidasActivas[i];
+                    var num = puerto - PUERTO_BASE + 1;
+                    html += '<div class="partida-item">';
+                    html += '<strong>Partida #' + num + '</strong>';
+                    html += '<span class="partida-btns">';
+                    html += '<button class="btn-unirse" onclick="unirsePartida(' + puerto + ')">JUGAR</button>';
+                    html += '<button class="btn-observar" onclick="observarPartida(' + puerto + ')">OBSERVAR</button>';
+                    html += '</span>';
+                    html += '<br><small style="color:#b2bec3;">Puerto: ' + puerto + '</small>';
+                    html += '</div>';
+                }
+                lista.innerHTML = html;
+            }
+
+            setStatus("Partidas activas: " + partidasActivas.length, partidasActivas.length > 0 ? "success" : "");
+        }
+
+        function compilar(callback) {
+            setStatus("Compilando proyecto...", "loading");
+
+            var batContent = '@echo off\r\n';
+            batContent += 'cd /d "' + basePath + 'servidor-java"\r\n';
+            batContent += 'call gradlew.bat build -x test --console=plain -q\r\n';
+            batContent += 'if errorlevel 1 exit /b 1\r\n';
+            batContent += 'cd /d "' + basePath + '"\r\n';
+            batContent += 'if not exist "cliente-c\\build" mkdir "cliente-c\\build"\r\n';
+            batContent += 'cd cliente-c\\build\r\n';
+            batContent += 'cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release >nul 2>&1\r\n';
+            batContent += 'if errorlevel 1 exit /b 1\r\n';
+            batContent += 'mingw32-make >nul 2>&1\r\n';
+            batContent += 'if errorlevel 1 exit /b 1\r\n';
+            batContent += 'exit /b 0\r\n';
+
+            var tempBat = basePath + "temp_compile.bat";
+            var f = fso.CreateTextFile(tempBat, true);
+            f.Write(batContent);
+            f.Close();
+
+            var ret = shell.Run('cmd /c "' + tempBat + '"', 0, true);
+            try { fso.DeleteFile(tempBat); } catch(e) {}
+
+            if (ret == 0 && clienteExiste()) {
+                setStatus("Compilacion exitosa!", "success");
+                if (callback) setTimeout(callback, 300);
+            } else {
+                setStatus("Error en la compilacion", "error");
+            }
+        }
+
+        function iniciarServidor(puerto, callback) {
+            setStatus("Iniciando servidor en puerto " + puerto + "...", "loading");
+
+            // Guardar referencia al proceso del servidor
+            var cmd = 'cmd /k "title Servidor DonCEyKongJr Puerto ' + puerto + ' && cd /d ' + basePath + 'servidor-java && gradlew.bat run --args=' + puerto + '"';
+            shell.Run(cmd, 1, false);
+            procesosAbiertos.push({tipo: 'servidor', puerto: puerto});
+
+            setTimeout(function() { esperarServidor(puerto, 0, callback); }, 2000);
+        }
+
+        function esperarServidor(puerto, intentos, callback) {
+            if (intentos > 25) {
+                setStatus("Timeout esperando servidor", "error");
+                return;
+            }
+
+            if (puertoActivo(puerto)) {
+                setStatus("Servidor listo en puerto " + puerto, "success");
+                actualizarPartidas();
+                if (callback) setTimeout(callback, 300);
+            } else {
+                setStatus("Esperando servidor... (" + (intentos + 1) + "/25)", "loading");
+                setTimeout(function() { esperarServidor(puerto, intentos + 1, callback); }, 1000);
+            }
+        }
+
+        function iniciarCliente(puerto, spectator) {
+            var exe = basePath + "cliente-c\\build\\DonCEyKongJr-Client.exe";
+            var args = " --port " + puerto;
+            if (spectator) args += " --spectator";
+            shell.Run('"' + exe + '"' + args, 1, false);
+            procesosAbiertos.push({tipo: spectator ? 'observador' : 'cliente', puerto: puerto});
+        }
+
+        // === ACCIONES ===
+
+        function nuevaPartida() {
+            var puerto = siguientePuertoDisponible();
+
+            if (!clienteExiste()) {
+                compilar(function() {
+                    iniciarServidor(puerto, function() {
+                        iniciarCliente(puerto, false);
+                        setStatus("Partida #" + (puerto - PUERTO_BASE + 1) + " creada!", "success");
+                    });
+                });
+            } else {
+                iniciarServidor(puerto, function() {
+                    iniciarCliente(puerto, false);
+                    setStatus("Partida #" + (puerto - PUERTO_BASE + 1) + " creada!", "success");
+                });
+            }
+        }
+
+        function unirsePartida(puerto) {
+            if (!clienteExiste()) {
+                compilar(function() {
+                    iniciarCliente(puerto, false);
+                    setStatus("Conectado a partida en puerto " + puerto, "success");
+                });
+            } else {
+                iniciarCliente(puerto, false);
+                setStatus("Conectado a partida en puerto " + puerto, "success");
+            }
+        }
+
+        function observarPartida(puerto) {
+            if (!clienteExiste()) {
+                compilar(function() {
+                    iniciarCliente(puerto, true);
+                    setStatus("Observando partida en puerto " + puerto, "success");
+                });
+            } else {
+                iniciarCliente(puerto, true);
+                setStatus("Observando partida en puerto " + puerto, "success");
+            }
+        }
+
+        function jugarRapido() {
+            if (partidasActivas.length > 0) {
+                unirsePartida(partidasActivas[0]);
+            } else {
+                nuevaPartida();
+            }
+        }
+
+        function cerrarTodo() {
+            setStatus("Cerrando todas las ventanas...", "loading");
+
+            // Cerrar todos los clientes de DonCEyKongJr
+            shell.Run('cmd /c "taskkill /IM DonCEyKongJr-Client.exe /F >nul 2>&1"', 0, true);
+
+            // Cerrar todas las ventanas de servidor (cmd con gradlew)
+            shell.Run('cmd /c "taskkill /FI \"WINDOWTITLE eq Servidor DonCEyKongJr*\" /F >nul 2>&1"', 0, true);
+
+            // Cerrar procesos de Java relacionados con el servidor
+            shell.Run('cmd /c "taskkill /IM java.exe /FI \"WINDOWTITLE eq Servidor*\" /F >nul 2>&1"', 0, true);
+
+            procesosAbiertos = [];
+
+            setTimeout(function() {
+                actualizarPartidas();
+                setStatus("Todo cerrado", "success");
+            }, 1000);
+        }
+
+        function salir() {
+            if (procesosAbiertos.length > 0) {
+                if (confirm("Hay " + procesosAbiertos.length + " procesos abiertos.\n\n¿Deseas cerrar todo antes de salir?")) {
+                    cerrarTodo();
+                    setTimeout(function() { window.close(); }, 1500);
+                    return;
+                }
+            }
+            window.close();
+        }
+    </script>
+</head>
+<body onload="init()">
+    <div class="title">DonCEy Kong Jr</div>
+    <div class="subtitle">MULTIPLAYER LAUNCHER</div>
+
+    <div class="section">
+        <div class="section-title">PARTIDAS ACTIVAS</div>
+        <div id="partidas-lista" class="partidas-lista">
+            <div class="no-partidas">Buscando partidas...</div>
+        </div>
+        <div class="btn-row" style="margin-top: 15px; text-align: center;">
+            <button class="btn btn-small btn-refresh" onclick="actualizarPartidas()">
+                <span class="btn-icon">&#8635;</span>
+                <span class="btn-text">Actualizar Lista</span>
+            </button>
+            <button class="btn btn-small btn-exit" onclick="cerrarTodo()" style="background-color: #e74c3c;">
+                <span class="btn-icon">&#10006;</span>
+                <span class="btn-text">Cerrar Todo</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">ACCIONES</div>
+        <div class="menu">
+            <button class="btn btn-play" onclick="jugarRapido()">
+                <span class="btn-icon">&#9658;</span>
+                <span class="btn-text">
+                    JUGAR RAPIDO
+                    <div class="btn-desc">Unirse a partida existente o crear nueva automaticamente</div>
+                </span>
+            </button>
+
+            <button class="btn btn-new" onclick="nuevaPartida()">
+                <span class="btn-icon">&#10010;</span>
+                <span class="btn-text">
+                    NUEVA PARTIDA
+                    <div class="btn-desc">Crear un nuevo servidor y conectarse como jugador</div>
+                </span>
+            </button>
+
+            <button class="btn btn-exit" onclick="salir()">
+                <span class="btn-icon">&#10006;</span>
+                <span class="btn-text">
+                    SALIR
+                    <div class="btn-desc">Cerrar launcher (pregunta si cerrar procesos)</div>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <div id="status" class="status">Cargando...</div>
+
+    <div class="footer">
+        Controles: <span>W/A/S/D</span> Moverse | <span>SPACE</span> Saltar | <span>ESC</span> Salir del juego
+    </div>
+</body>
+</html>
