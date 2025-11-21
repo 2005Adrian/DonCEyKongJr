@@ -21,6 +21,7 @@ public class GameManager extends Subject {
     private List<Cocodrilo> cocodrilos;
     private List<Fruta> frutas;
     private List<Liana> lianas;
+    private Mario mario;
     private double velocidadMultiplicador;
     private boolean pausado;
     private long tickActual;
@@ -50,10 +51,21 @@ public class GameManager extends Subject {
 
         inicializarLianas();
         inicializarEntidades();
+        inicializarMario();
 
         // Iniciar motor de cocodrilos
         motorCocodrilos.start();
         LoggerUtil.info("Motor de cocodrilos iniciado");
+    }
+
+    /**
+     * Inicializa a Mario como obstáculo estático en una liana.
+     * Mario se ubica en la liana 5 a una altura intermedia.
+     */
+    private void inicializarMario() {
+        // Mario en liana 5 (completa 0-500), a altura 150
+        this.mario = new Mario("MARIO_1", 5, 150.0);
+        LoggerUtil.info("Mario inicializado en liana 5, y=150");
     }
     
     /**
@@ -161,6 +173,9 @@ public class GameManager extends Subject {
         // Detectar colisiones jugador-cocodrilo
         detectarColisionesJugadorCocodrilo();
 
+        // Detectar colisiones jugador-Mario
+        detectarColisionesJugadorMario();
+
         // Detectar recogida de frutas
         detectarRecogidaFrutas();
 
@@ -232,7 +247,36 @@ public class GameManager extends Subject {
             }
         }
     }
-    
+
+    /**
+     * Detecta colisiones entre jugadores y Mario.
+     */
+    private void detectarColisionesJugadorMario() {
+        if (mario == null || !mario.isActivo()) {
+            return;
+        }
+
+        for (Jugador jugador : jugadores.values()) {
+            if (!jugador.isActivo() || jugador.estaCelebrando()) {
+                continue;
+            }
+            Integer lianaJugador = jugador.getLianaId();
+            if (lianaJugador == null) {
+                continue;
+            }
+
+            // Verificar si están en la misma liana
+            if (lianaJugador != mario.getLianaId()) {
+                continue;
+            }
+
+            // Verificar proximidad en Y (usa el mismo delta que cocodrilos)
+            if (Math.abs(jugador.getY() - mario.getY()) <= Config.JUGADOR_DELTA_Y_COCODRILO) {
+                manejarGolpeJugador(jugador, "MARIO:" + mario.getId());
+            }
+        }
+    }
+
     /**
      * Detecta cuando un jugador recoge una fruta.
      */
@@ -631,6 +675,15 @@ public class GameManager extends Subject {
             }
         }
         estado.put("fruits", frutasData);
+
+        // Mario
+        if (mario != null && mario.isActivo()) {
+            Map<String, Object> marioData = new HashMap<>();
+            marioData.put("id", mario.getId());
+            marioData.put("liana", mario.getLianaId());
+            marioData.put("y", mario.getY());
+            estado.put("mario", marioData);
+        }
 
         return estado;
     }

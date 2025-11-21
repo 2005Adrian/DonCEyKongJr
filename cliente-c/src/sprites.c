@@ -13,6 +13,7 @@ Sprite sprite_cocodrilo_rojo = {NULL, 0, 0};
 Sprite sprite_cocodrilo_azul = {NULL, 0, 0};
 Sprite sprite_banana = {NULL, 0, 0};
 Sprite sprite_corazon = {NULL, 0, 0};
+Sprite sprite_mario = {NULL, 0, 0};
 
 // =========================
 //  Utilidades de archivo
@@ -245,6 +246,9 @@ int cargarSprites() {
 
     cargarSprite("corazon.bmp", &sprite_corazon);
 
+    // Mario
+    cargarSprite("mario.bmp", &sprite_mario);
+
     return 1;
 }
 
@@ -262,6 +266,7 @@ void liberarSprites() {
     if (sprite_cocodrilo_azul.bitmap) DeleteObject(sprite_cocodrilo_azul.bitmap);
     if (sprite_banana.bitmap) DeleteObject(sprite_banana.bitmap);
     if (sprite_corazon.bitmap) DeleteObject(sprite_corazon.bitmap);
+    if (sprite_mario.bitmap) DeleteObject(sprite_mario.bitmap);
 
     // Nota: para mantener compatibilidad con la implementación original,
     // no liberamos explícitamente los frames de animación caminando*,

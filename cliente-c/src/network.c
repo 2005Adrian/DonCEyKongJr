@@ -366,6 +366,27 @@ void parsearEstadoJSON(const char* json) {
         }
     }
 
+    // Mario
+    nuevo.marioActivo = 0;
+    const char* marioStart = strstr(payload, "\"mario\":{");
+    if (marioStart) {
+        const char* objStart = marioStart + 8;
+        const char* objEnd = strchr(objStart, '}');
+        if (objEnd) {
+            nuevo.marioActivo = 1;
+            nuevo.mario.active = 1;
+
+            const char* idPos = strstr(objStart, "\"id\":\"");
+            if (idPos && idPos < objEnd) sscanf(idPos + 6, "%31[^\"]", nuevo.mario.id);
+
+            const char* lianaPos = strstr(objStart, "\"liana\":");
+            if (lianaPos && lianaPos < objEnd) sscanf(lianaPos + 8, "%d", &nuevo.mario.liana);
+
+            const char* yPos = strstr(objStart, "\"y\":");
+            if (yPos && yPos < objEnd) sscanf(yPos + 4, "%lf", &nuevo.mario.y);
+        }
+    }
+
     EnterCriticalSection(&g_estadoLock);
     g_estadoActual = nuevo;
 

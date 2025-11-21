@@ -72,6 +72,11 @@ void DibujarEscenario(HDC hdc) {
         DibujarCocodriloMejorado(hdc, &g_estadoActual.cocodrilos[i]);
     }
 
+    // Mario
+    if (g_estadoActual.marioActivo) {
+        DibujarMario(hdc, &g_estadoActual.mario);
+    }
+
     // Jugadores
     for (int i = 0; i < g_estadoActual.numJugadores; i++) {
         if (g_estadoActual.jugadores[i].active) {
@@ -440,6 +445,61 @@ void DibujarCocodriloMejorado(HDC hdc, Cocodrilo* c) {
     Rectangle(hdc, x - 15, y + 10, x - 10, y + 18);
     Rectangle(hdc, x + 5, y + 10, x + 10, y + 18);
     DeleteObject(hBrush);
+}
+
+/**
+ * Dibuja a Mario como obstáculo
+ */
+void DibujarMario(HDC hdc, MarioData* m) {
+    int x = gameToScreenX(m->liana);
+    int y = gameToScreenY(m->y);
+
+    if (x < 0 || y < 0) return;
+
+    // Usar sprite si está disponible
+    if (sprite_mario.bitmap) {
+        dibujarSpriteEscalado(hdc, &sprite_mario, x - 20, y - 25, 40, 50);
+        return;
+    }
+
+    // Fallback: dibujar Mario con GDI
+    // Cuerpo rojo
+    HBRUSH hBrushBody = CreateSolidBrush(RGB(255, 0, 0));
+    SelectObject(hdc, hBrushBody);
+    Rectangle(hdc, x - 12, y - 15, x + 12, y + 10);
+    DeleteObject(hBrushBody);
+
+    // Cabeza (piel)
+    HBRUSH hBrushHead = CreateSolidBrush(RGB(255, 200, 150));
+    SelectObject(hdc, hBrushHead);
+    Ellipse(hdc, x - 10, y - 30, x + 10, y - 10);
+    DeleteObject(hBrushHead);
+
+    // Gorra roja
+    HBRUSH hBrushCap = CreateSolidBrush(RGB(255, 0, 0));
+    SelectObject(hdc, hBrushCap);
+    Rectangle(hdc, x - 12, y - 32, x + 12, y - 24);
+    DeleteObject(hBrushCap);
+
+    // Bigote
+    HBRUSH hBrushMustache = CreateSolidBrush(RGB(50, 30, 10));
+    SelectObject(hdc, hBrushMustache);
+    Rectangle(hdc, x - 8, y - 18, x + 8, y - 14);
+    DeleteObject(hBrushMustache);
+
+    // Ojos
+    HBRUSH hBrushEye = CreateSolidBrush(RGB(0, 0, 0));
+    SelectObject(hdc, hBrushEye);
+    Ellipse(hdc, x - 6, y - 26, x - 2, y - 22);
+    Ellipse(hdc, x + 2, y - 26, x + 6, y - 22);
+    DeleteObject(hBrushEye);
+
+    // Piernas azules
+    HBRUSH hBrushLegs = CreateSolidBrush(RGB(0, 0, 200));
+    SelectObject(hdc, hBrushLegs);
+    Rectangle(hdc, x - 10, y + 10, x - 4, y + 22);
+    Rectangle(hdc, x + 4, y + 10, x + 10, y + 22);
+    DeleteObject(hBrushLegs);
 }
 
 /**

@@ -41,6 +41,7 @@ extern Sprite sprite_cocodrilo_rojo;
 extern Sprite sprite_cocodrilo_azul;
 extern Sprite sprite_banana;
 extern Sprite sprite_corazon;
+extern Sprite sprite_mario;
 
 // Funciones de sprites
 int cargarSprites();

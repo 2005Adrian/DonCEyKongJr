@@ -36,6 +36,14 @@ typedef struct {
     int points;
 } Fruta;
 
+// Estructura para representar a Mario (obstaculo)
+typedef struct {
+    char id[32];
+    int liana;
+    double y;
+    int active;
+} MarioData;
+
 // Estructura para representar el estado completo del juego
 typedef struct {
     long tick;
@@ -52,6 +60,9 @@ typedef struct {
 
     Fruta frutas[MAX_FRUTAS];
     int numFrutas;
+
+    MarioData mario;
+    int marioActivo;
 } EstadoJuego;
 
 // Alias para mantener compatibilidad

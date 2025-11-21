@@ -28,6 +28,7 @@ void DibujarDonkeyKong(HDC hdc);
 void DibujarJugadorMejorado(HDC hdc, Jugador* j);
 void DibujarCocodriloMejorado(HDC hdc, Cocodrilo* c);
 void DibujarFrutaMejorada(HDC hdc, Fruta* f);
+void DibujarMario(HDC hdc, MarioData* m);
 
 // Funciones auxiliares de dibujo
 void DibujarCorazon(HDC hdc, int x, int y, int size);
