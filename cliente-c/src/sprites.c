@@ -246,8 +246,10 @@ int cargarSprites() {
 
     cargarSprite("corazon.bmp", &sprite_corazon);
 
-    // Mario
-    cargarSprite("mario.bmp", &sprite_mario);
+    // Mario - intentar múltiples formatos
+    if (!cargarSprite("mario.bmp", &sprite_mario)) {
+        printf("Advertencia: No se pudo cargar mario.bmp\n");
+    }
 
     return 1;
 }
