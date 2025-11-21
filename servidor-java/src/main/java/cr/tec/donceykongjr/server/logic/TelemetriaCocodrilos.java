@@ -21,21 +21,21 @@ public class TelemetriaCocodrilos {
     // Métricas de tiempo
     private final AtomicLong tiempoTotalEjecucionMs;
     private final AtomicLong ultimoTickDuracionMs;
-    private volatile Double ultimoTickDesviacionMs;
-    private volatile Double promedioTickDuracionMs;
+    private volatile double ultimoTickDesviacionMs;
+    private volatile double promedioTickDuracionMs;
 
     // Configuración
-    private final Double dtEsperadoMs;
+    private final double dtEsperadoMs;
 
     // Timestamp de inicio
-    private final Long iniciadoEn;
+    private final long iniciadoEn;
 
     /**
      * Crea una nueva instancia de telemetría.
      *
      * @param dtEsperadoMs Delta time esperado en milisegundos (para calcular desviación)
      */
-    public TelemetriaCocodrilos(Double dtEsperadoMs) {
+    public TelemetriaCocodrilos(double dtEsperadoMs) {
         this.cocodrilosCreados = new AtomicInteger(0);
         this.cocodrilosEliminados = new AtomicInteger(0);
         this.ticksEjecutados = new AtomicLong(0);
@@ -66,7 +66,7 @@ public class TelemetriaCocodrilos {
      *
      * @param duracionMs Duración del tick en milisegundos
      */
-    public void registrarTick(Long duracionMs) {
+    public void registrarTick(long duracionMs) {
         ticksEjecutados.incrementAndGet();
         ultimoTickDuracionMs.set(duracionMs);
         tiempoTotalEjecucionMs.addAndGet(duracionMs);
@@ -96,46 +96,46 @@ public class TelemetriaCocodrilos {
 
     // Getters
 
-    public Integer getCocodrilosCreados() {
+    public int getCocodrilosCreados() {
         return cocodrilosCreados.get();
     }
 
-    public Integer getCocodrilosEliminados() {
+    public int getCocodrilosEliminados() {
         return cocodrilosEliminados.get();
     }
 
-    public Long getTicksEjecutados() {
+    public long getTicksEjecutados() {
         return ticksEjecutados.get();
     }
 
-    public Long getTiempoTotalEjecucionMs() {
+    public long getTiempoTotalEjecucionMs() {
         return tiempoTotalEjecucionMs.get();
     }
 
-    public Long getUltimoTickDuracionMs() {
+    public long getUltimoTickDuracionMs() {
         return ultimoTickDuracionMs.get();
     }
 
-    public Double getUltimoTickDesviacionMs() {
+    public double getUltimoTickDesviacionMs() {
         return ultimoTickDesviacionMs;
     }
 
-    public Double getPromedioTickDuracionMs() {
+    public double getPromedioTickDuracionMs() {
         return promedioTickDuracionMs;
     }
 
-    public Double getDtEsperadoMs() {
+    public double getDtEsperadoMs() {
         return dtEsperadoMs;
     }
 
-    public Long getIniciadoEn() {
+    public long getIniciadoEn() {
         return iniciadoEn;
     }
 
     /**
      * Calcula el TPS (ticks por segundo) promedio.
      */
-    public Double getTicksPorSegundoPromedio() {
+    public double getTicksPorSegundoPromedio() {
         long ticks = ticksEjecutados.get();
         long tiempoTotal = tiempoTotalEjecucionMs.get();
         if (tiempoTotal == 0) return 0.0;
@@ -145,7 +145,7 @@ public class TelemetriaCocodrilos {
     /**
      * Calcula el tiempo de uptime en segundos.
      */
-    public Double getUptimeSegundos() {
+    public double getUptimeSegundos() {
         return (System.currentTimeMillis() - iniciadoEn) / 1000.0;
     }
 

@@ -11,7 +11,7 @@ package cr.tec.donceykongjr.server.logic.entidades;
  * - No rebota ni invierte dirección
  */
 public class CocodriloAzul extends Cocodrilo {
-    private Double limiteInferior; // Límite inferior donde se elimina
+    private double limiteInferior; // Límite inferior donde se elimina
 
     /**
      * Constructor completo con límite inferior explícito.
@@ -22,8 +22,8 @@ public class CocodriloAzul extends Cocodrilo {
      * @param velocidadBase Velocidad base de caída
      * @param limiteInferior Límite inferior donde el cocodrilo se elimina
      */
-    public CocodriloAzul(String id, Integer lianaId, Double yInicial,
-                         Double velocidadBase, Double limiteInferior) {
+    public CocodriloAzul(String id, int lianaId, double yInicial,
+                         double velocidadBase, double limiteInferior) {
         super(id, TipoCocodrilo.AZUL, lianaId, yInicial, velocidadBase, -1);
 
         // Forzar dirección a -1 (siempre baja)
@@ -65,14 +65,14 @@ public class CocodriloAzul extends Cocodrilo {
      * Los cocodrilos azules siempre bajan.
      */
     @Override
-    public void setDireccion(Integer direccion) {
+    public void setDireccion(int direccion) {
         // No permitir cambiar la dirección en cocodrilos azules
         this.direccion = -1;
     }
 
     // Getters
 
-    public Double getLimiteInferior() {
+    public double getLimiteInferior() {
         return limiteInferior;
     }
 }

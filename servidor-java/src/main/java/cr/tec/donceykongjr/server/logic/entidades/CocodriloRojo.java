@@ -11,8 +11,8 @@ package cr.tec.donceykongjr.server.logic.entidades;
  * - Dirección: +1 (sube hacia arriba, Y decrece) o -1 (baja hacia abajo, Y crece)
  */
 public class CocodriloRojo extends Cocodrilo {
-    private Double alturaMin; // Límite inferior (Y mínimo)
-    private Double alturaMax; // Límite superior (Y máximo)
+    private double alturaMin; // Límite inferior (Y mínimo)
+    private double alturaMax; // Límite superior (Y máximo)
 
     /**
      * Constructor completo con límites explícitos.
@@ -25,8 +25,8 @@ public class CocodriloRojo extends Cocodrilo {
      * @param alturaMin Límite inferior de movimiento
      * @param alturaMax Límite superior de movimiento
      */
-    public CocodriloRojo(String id, Integer lianaId, Double yInicial, Double velocidadBase,
-                         Integer direccion, Double alturaMin, Double alturaMax) {
+    public CocodriloRojo(String id, int lianaId, double yInicial, double velocidadBase,
+                         int direccion, double alturaMin, double alturaMax) {
         super(id, TipoCocodrilo.ROJO, lianaId, yInicial, velocidadBase, direccion);
 
         if (alturaMin >= alturaMax) {
@@ -85,11 +85,11 @@ public class CocodriloRojo extends Cocodrilo {
 
     // Getters
 
-    public Double getAlturaMin() {
+    public double getAlturaMin() {
         return alturaMin;
     }
 
-    public Double getAlturaMax() {
+    public double getAlturaMax() {
         return alturaMax;
     }
 }

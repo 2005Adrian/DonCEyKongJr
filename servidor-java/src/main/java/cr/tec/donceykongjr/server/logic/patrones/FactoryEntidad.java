@@ -27,9 +27,9 @@ public class FactoryEntidad {
      * @param alturaMax Límite superior de movimiento
      * @return Nueva instancia de CocodriloRojo
      */
-    public static CocodriloRojo crearCocodriloRojo(String id, Integer lianaId, Double yInicial,
-                                                    Double velocidadBase, Integer direccion,
-                                                    Double alturaMin, Double alturaMax) {
+    public static CocodriloRojo crearCocodriloRojo(String id, int lianaId, double yInicial,
+                                                    double velocidadBase, int direccion,
+                                                    double alturaMin, double alturaMax) {
         return new CocodriloRojo(id, lianaId, yInicial, velocidadBase, direccion, alturaMin, alturaMax);
     }
 
@@ -44,8 +44,8 @@ public class FactoryEntidad {
      * @param limiteInferior Límite inferior donde se eliminará
      * @return Nueva instancia de CocodriloAzul
      */
-    public static CocodriloAzul crearCocodriloAzul(String id, Integer lianaId, Double yInicial,
-                                                    Double velocidadBase, Double limiteInferior) {
+    public static CocodriloAzul crearCocodriloAzul(String id, int lianaId, double yInicial,
+                                                    double velocidadBase, double limiteInferior) {
         return new CocodriloAzul(id, lianaId, yInicial, velocidadBase, limiteInferior);
     }
 
@@ -80,7 +80,7 @@ public class FactoryEntidad {
 
     /**
      * Crea un cocodrilo rojo con generación automática de ID.
-     * @deprecated Usar {@link #crearCocodriloRojo(String, Integer, Double, Double, Integer, Double, Double)} con ID explícito
+     * @deprecated Usar {@link #crearCocodriloRojo(String, int, double, double, int, double, double)} con ID explícito
      */
     @Deprecated
     public static Cocodrilo crearCocodriloRojo(int liana, double y, double velocidad) {
@@ -91,13 +91,13 @@ public class FactoryEntidad {
 
     /**
      * Crea un cocodrilo azul con generación automática de ID.
-     * @deprecated Usar {@link #crearCocodriloAzul(String, Integer, Double, Double, Double)} con ID explícito
+     * @deprecated Usar {@link #crearCocodriloAzul(String, int, double, double, double)} con ID explícito
      */
     @Deprecated
     public static Cocodrilo crearCocodriloAzul(int liana, double y, double velocidad) {
         contadorCocodrilos++;
         String id = "CAZUL_" + contadorCocodrilos;
-        return new CocodriloAzul(id, 0, y, liana, velocidad);
+        return new CocodriloAzul(id, 0.0, y, liana, velocidad);
     }
 
     /**

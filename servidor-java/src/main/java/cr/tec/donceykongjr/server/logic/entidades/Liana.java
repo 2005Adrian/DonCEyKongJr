@@ -6,8 +6,8 @@ package cr.tec.donceykongjr.server.logic.entidades;
  * Define límites claros (alturaMin, alturaMax) para el movimiento de entidades.
  */
 public class Liana extends Entidad {
-    private Double alturaMin; // Límite inferior de la liana (Y mínimo)
-    private Double alturaMax; // Límite superior de la liana (Y máximo)
+    private double alturaMin; // Límite inferior de la liana (Y mínimo)
+    private double alturaMax; // Límite superior de la liana (Y máximo)
 
     /**
      * Crea una nueva liana con límites específicos.
@@ -20,7 +20,7 @@ public class Liana extends Entidad {
      * @param alturaMax Límite superior (Y máximo)
      * @throws IllegalArgumentException si alturaMin >= alturaMax
      */
-    public Liana(String id, double x, double y, int liana, Double alturaMin, Double alturaMax) {
+    public Liana(String id, double x, double y, int liana, double alturaMin, double alturaMax) {
         super(id, x, y, liana);
         if (alturaMin >= alturaMax) {
             throw new IllegalArgumentException("alturaMin debe ser menor que alturaMax");
@@ -54,21 +54,21 @@ public class Liana extends Entidad {
     /**
      * Obtiene la altura total de la liana.
      */
-    public Double getAltura() {
+    public double getAltura() {
         return alturaMax - alturaMin;
     }
 
     /**
      * Obtiene el límite inferior de la liana.
      */
-    public Double getAlturaMin() {
+    public double getAlturaMin() {
         return alturaMin;
     }
 
     /**
      * Obtiene el límite superior de la liana.
      */
-    public Double getAlturaMax() {
+    public double getAlturaMax() {
         return alturaMax;
     }
 
@@ -78,7 +78,7 @@ public class Liana extends Entidad {
      * @param y Posición Y a ajustar
      * @return Posición Y ajustada dentro de [alturaMin, alturaMax]
      */
-    public Double limitarY(double y) {
+    public double limitarY(double y) {
         if (y < alturaMin) return alturaMin;
         if (y > alturaMax) return alturaMax;
         return y;

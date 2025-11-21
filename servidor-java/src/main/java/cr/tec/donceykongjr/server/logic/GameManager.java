@@ -197,7 +197,7 @@ public class GameManager extends Subject {
                 if (snap.getTipo() == Cocodrilo.TipoCocodrilo.ROJO) {
                     temp = new CocodriloRojo(snap.getId(), 0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
                 } else {
-                    temp = new CocodriloAzul(snap.getId(), 0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
+                    temp = new CocodriloAzul(snap.getId(), 0.0, snap.getY(), snap.getLianaId(), snap.getVelocidadBase());
                 }
                 cocodrilos.add(temp);
             }

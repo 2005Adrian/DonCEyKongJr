@@ -10,11 +10,11 @@ import java.util.List;
  */
 public final class SnapshotSistemaCocodrilos {
     private final List<SnapshotCocodrilo> cocodrilos;
-    private final Double factorDificultad;
-    private final Long tickActual;
-    private final Long timestamp;
-    private final Integer totalCocodrilosActivos;
-    private final Integer totalCocodrilosEliminados;
+    private final double factorDificultad;
+    private final long tickActual;
+    private final long timestamp;
+    private final int totalCocodrilosActivos;
+    private final int totalCocodrilosEliminados;
 
     /**
      * Crea un snapshot inmutable del sistema completo.
@@ -26,10 +26,10 @@ public final class SnapshotSistemaCocodrilos {
      * @param totalCocodrilosEliminados Total de cocodrilos eliminados (histórico)
      */
     public SnapshotSistemaCocodrilos(List<SnapshotCocodrilo> cocodrilos,
-                                     Double factorDificultad,
-                                     Long tickActual,
-                                     Integer totalCocodrilosActivos,
-                                     Integer totalCocodrilosEliminados) {
+                                     double factorDificultad,
+                                     long tickActual,
+                                     int totalCocodrilosActivos,
+                                     int totalCocodrilosEliminados) {
         // Crear copia inmutable defensiva
         this.cocodrilos = Collections.unmodifiableList(cocodrilos);
         this.factorDificultad = factorDificultad;
@@ -48,27 +48,27 @@ public final class SnapshotSistemaCocodrilos {
         return cocodrilos;
     }
 
-    public Double getFactorDificultad() {
+    public double getFactorDificultad() {
         return factorDificultad;
     }
 
-    public Long getTickActual() {
+    public long getTickActual() {
         return tickActual;
     }
 
-    public Long getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public Integer getTotalCocodrilosActivos() {
+    public int getTotalCocodrilosActivos() {
         return totalCocodrilosActivos;
     }
 
-    public Integer getTotalCocodrilosEliminados() {
+    public int getTotalCocodrilosEliminados() {
         return totalCocodrilosEliminados;
     }
 
-    public Integer getTotalCocodrilos() {
+    public int getTotalCocodrilos() {
         return cocodrilos.size();
     }
 

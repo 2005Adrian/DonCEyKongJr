@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
  */
 public class MotorCocodrilos {
     // Configuración
-    private final Double dtFijo; // Delta time fijo en segundos
-    private final Long dtFijoMs; // Delta time fijo en milisegundos
-    private volatile Double factorDificultad; // Factor de dificultad (≥ 1.0)
+    private final double dtFijo; // Delta time fijo en segundos
+    private final long dtFijoMs; // Delta time fijo en milisegundos
+    private volatile double factorDificultad; // Factor de dificultad (≥ 1.0)
 
     // Estado del motor
     private final AtomicBoolean ejecutando;
@@ -53,7 +53,7 @@ public class MotorCocodrilos {
      *
      * @param dtFijo Delta time fijo en segundos (ej: 0.1 = 10 ticks/segundo)
      */
-    public MotorCocodrilos(Double dtFijo) {
+    public MotorCocodrilos(double dtFijo) {
         if (dtFijo <= 0) {
             throw new IllegalArgumentException("dtFijo debe ser mayor a 0");
         }
@@ -67,7 +67,7 @@ public class MotorCocodrilos {
         this.lianas = new ConcurrentHashMap<>();
         this.colaComandos = new ConcurrentLinkedQueue<>();
         this.contadorIds = new AtomicInteger(0);
-        this.telemetria = new TelemetriaCocodrilos(dtFijoMs.doubleValue());
+        this.telemetria = new TelemetriaCocodrilos((double) dtFijoMs);
 
         LoggerUtil.info("MotorCocodrilos inicializado con dt=" + dtFijo + "s");
     }
@@ -130,7 +130,7 @@ public class MotorCocodrilos {
      *
      * @param dt Delta time en segundos
      */
-    public void tickForzado(Double dt) {
+    public void tickForzado(double dt) {
         synchronized (lock) {
             procesarColaComandos();
             actualizarCocodrilos(dt);
@@ -147,8 +147,8 @@ public class MotorCocodrilos {
      * @param direccion Dirección inicial (+1 o -1)
      * @return ID del cocodrilo creado, o null si hubo error
      */
-    public String crearCocodriloRojo(Integer lianaId, Double yInicial,
-                                     Double velocidadBase, Integer direccion) {
+    public String crearCocodriloRojo(int lianaId, double yInicial,
+                                     double velocidadBase, int direccion) {
         // Validar liana
         Liana liana = lianas.get(lianaId);
         if (liana == null) {
@@ -191,8 +191,8 @@ public class MotorCocodrilos {
      * @param velocidadBase Velocidad base
      * @return ID del cocodrilo creado, o null si hubo error
      */
-    public String crearCocodriloAzul(Integer lianaId, Double yInicial,
-                                     Double velocidadBase) {
+    public String crearCocodriloAzul(int lianaId, double yInicial,
+                                     double velocidadBase) {
         // Validar liana
         Liana liana = lianas.get(lianaId);
         if (liana == null) {
@@ -241,7 +241,7 @@ public class MotorCocodrilos {
      *
      * @param multiplicador Factor multiplicador (debe ser > 1.0)
      */
-    public void incrementarDificultad(Double multiplicador) {
+    public void incrementarDificultad(double multiplicador) {
         if (multiplicador <= 1.0) {
             throw new IllegalArgumentException("Multiplicador debe ser > 1.0");
         }
@@ -343,7 +343,7 @@ public class MotorCocodrilos {
     /**
      * Actualiza todos los cocodrilos activos en orden determinista.
      */
-    private void actualizarCocodrilos(Double dt) {
+    private void actualizarCocodrilos(double dt) {
         // Ordenar por ID para determinismo
         List<Cocodrilo> lista = new ArrayList<>(cocodrilos.values());
         lista.sort(Comparator.comparing(Cocodrilo::getId));
@@ -382,23 +382,23 @@ public class MotorCocodrilos {
         return ejecutando.get();
     }
 
-    public Double getDtFijo() {
+    public double getDtFijo() {
         return dtFijo;
     }
 
-    public Double getFactorDificultad() {
+    public double getFactorDificultad() {
         return factorDificultad;
     }
 
-    public Long getTickActual() {
+    public long getTickActual() {
         return tickActual.get();
     }
 
-    public Integer getCantidadCocodrilos() {
+    public int getCantidadCocodrilos() {
         return cocodrilos.size();
     }
 
-    public Integer getCantidadLianas() {
+    public int getCantidadLianas() {
         return lianas.size();
     }
 }

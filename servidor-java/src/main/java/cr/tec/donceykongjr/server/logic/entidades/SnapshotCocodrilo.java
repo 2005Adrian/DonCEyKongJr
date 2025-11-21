@@ -8,13 +8,13 @@ package cr.tec.donceykongjr.server.logic.entidades;
 public final class SnapshotCocodrilo {
     private final String id;
     private final Cocodrilo.TipoCocodrilo tipo;
-    private final Integer lianaId;
-    private final Double y;
-    private final Double velocidadBase;
-    private final Integer direccion;
+    private final int lianaId;
+    private final double y;
+    private final double velocidadBase;
+    private final int direccion;
     private final EstadoCocodrilo estado;
-    private final Long creadoEn;
-    private final Long snapshotTimestamp;
+    private final long creadoEn;
+    private final long snapshotTimestamp;
 
     /**
      * Crea un snapshot inmutable desde un cocodrilo.
@@ -43,19 +43,19 @@ public final class SnapshotCocodrilo {
         return tipo;
     }
 
-    public Integer getLianaId() {
+    public int getLianaId() {
         return lianaId;
     }
 
-    public Double getY() {
+    public double getY() {
         return y;
     }
 
-    public Double getVelocidadBase() {
+    public double getVelocidadBase() {
         return velocidadBase;
     }
 
-    public Integer getDireccion() {
+    public int getDireccion() {
         return direccion;
     }
 
@@ -63,11 +63,11 @@ public final class SnapshotCocodrilo {
         return estado;
     }
 
-    public Long getCreadoEn() {
+    public long getCreadoEn() {
         return creadoEn;
     }
 
-    public Long getSnapshotTimestamp() {
+    public long getSnapshotTimestamp() {
         return snapshotTimestamp;
     }
 

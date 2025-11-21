@@ -18,11 +18,11 @@ import java.time.Instant;
  */
 public abstract class Cocodrilo extends Entidad {
     protected TipoCocodrilo tipo;
-    protected Integer lianaId;
-    protected Double velocidadBase;
-    protected Integer direccion; // +1 = sube, -1 = baja
+    protected int lianaId;
+    protected double velocidadBase;
+    protected int direccion; // +1 = sube, -1 = baja
     protected EstadoCocodrilo estado;
-    protected Long creadoEn; // timestamp en milisegundos
+    protected long creadoEn; // timestamp en milisegundos
 
     // Campos legacy para compatibilidad
     @Deprecated
@@ -47,8 +47,8 @@ public abstract class Cocodrilo extends Entidad {
      * @param velocidadBase Velocidad base (sin factor de dificultad)
      * @param direccion Dirección inicial: +1 (sube) o -1 (baja)
      */
-    public Cocodrilo(String id, TipoCocodrilo tipo, Integer lianaId, Double yInicial,
-                     Double velocidadBase, Integer direccion) {
+    public Cocodrilo(String id, TipoCocodrilo tipo, int lianaId, double yInicial,
+                     double velocidadBase, int direccion) {
         super(id, 0.0, yInicial, lianaId);
         this.tipo = tipo;
         this.lianaId = lianaId;
@@ -119,24 +119,24 @@ public abstract class Cocodrilo extends Entidad {
         return tipo;
     }
 
-    public Integer getLianaId() {
+    public int getLianaId() {
         return lianaId;
     }
 
-    public Double getVelocidadBase() {
+    public double getVelocidadBase() {
         return velocidadBase;
     }
 
-    public void setVelocidadBase(Double velocidadBase) {
+    public void setVelocidadBase(double velocidadBase) {
         this.velocidadBase = velocidadBase;
         this.velocidad = velocidadBase; // Compatibilidad legacy
     }
 
-    public Integer getDireccion() {
+    public int getDireccion() {
         return direccion;
     }
 
-    public void setDireccion(Integer direccion) {
+    public void setDireccion(int direccion) {
         if (direccion != 1 && direccion != -1) {
             throw new IllegalArgumentException("Direccion debe ser +1 o -1");
         }
@@ -147,7 +147,7 @@ public abstract class Cocodrilo extends Entidad {
         return estado;
     }
 
-    public Long getCreadoEn() {
+    public long getCreadoEn() {
         return creadoEn;
     }
 
