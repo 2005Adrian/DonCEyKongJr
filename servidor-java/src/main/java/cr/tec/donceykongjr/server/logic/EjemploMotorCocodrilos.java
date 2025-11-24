@@ -65,8 +65,8 @@ public class EjemploMotorCocodrilos {
 
         // Crear 5 lianas verticales con diferentes alturas
         for (int i = 0; i < 5; i++) {
-            Double alturaMin = 50.0;
-            Double alturaMax = 450.0;
+            double alturaMin = 50.0;
+            double alturaMax = 450.0;
 
             Liana liana = new Liana(
                     "LIANA_" + i,
